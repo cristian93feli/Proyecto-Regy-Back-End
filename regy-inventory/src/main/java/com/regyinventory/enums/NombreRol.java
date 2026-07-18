@@ -1,6 +1,6 @@
 package com.regyinventory.enums;
 
-public enum RoleName {
+public enum NombreRol {
 
     ROLE_ADMIN,
     ROLE_GUARDIAN,

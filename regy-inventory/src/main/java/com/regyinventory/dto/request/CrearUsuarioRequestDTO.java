@@ -11,7 +11,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-public class UserCreateRequestDTO {
+public class CrearUsuarioRequestDTO {
 
     @NotBlank(message = "La identificación es obligatoria")
     @Size(max = 20, message = "La identificación no puede superar 20 caracteres")

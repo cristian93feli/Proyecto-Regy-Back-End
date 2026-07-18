@@ -1,19 +1,19 @@
 package com.regyinventory.service.implementation;
 
 
-import com.regyinventory.dto.request.ChangePasswordRequestDTO;
-import com.regyinventory.dto.request.UserCreateRequestDTO;
-import com.regyinventory.dto.request.UserUpdateRequestDTO;
+import com.regyinventory.dto.request.CambiarContrasenaRequestDTO;
+import com.regyinventory.dto.request.CrearUsuarioRequestDTO;
+import com.regyinventory.dto.request.ActualizarUsuarioRequestDTO;
 import com.regyinventory.dto.response.PageResponseDTO;
-import com.regyinventory.dto.response.UserResponseDTO;
-import com.regyinventory.dto.response.UserRoleResponseDTO;
-import com.regyinventory.entities.Role;
-import com.regyinventory.entities.User;
+import com.regyinventory.dto.response.UsuarioResponseDTO;
+import com.regyinventory.dto.response.RolUsuarioResponseDTO;
+import com.regyinventory.entities.Rol;
+import com.regyinventory.entities.Usuario;
 import com.regyinventory.exceptions.BusinessException;
 import com.regyinventory.exceptions.ResourceNotFoundException;
-import com.regyinventory.repository.IRoleRepository;
-import com.regyinventory.repository.IUserRepository;
-import com.regyinventory.service.contracts.IUserService;
+import com.regyinventory.repository.IRolRepository;
+import com.regyinventory.repository.IUsuarioRepository;
+import com.regyinventory.service.contracts.IUsuarioService;
 import com.regyinventory.utils.PageableUtil;
 import com.regyinventory.utils.mapper.IGenericConverter;
 import lombok.RequiredArgsConstructor;
@@ -31,43 +31,43 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class UserService implements IUserService {
+public class UsuarioService implements IUsuarioService {
 
-    private final IUserRepository userRepository;
-    private final IRoleRepository roleRepository;
+    private final IUsuarioRepository userRepository;
+    private final IRolRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final IGenericConverter converter;
 
     @Override
     @Transactional
-    public UserResponseDTO create(UserCreateRequestDTO request) {
+    public UsuarioResponseDTO create(CrearUsuarioRequestDTO request) {
 
         validateCreateRequest(request);
 
-        Set<Role> roles = findRoles(request.getRoleIds());
+        Set<Rol> rols = findRoles(request.getRoleIds());
 
-        User user = User.builder()
+        Usuario user = Usuario.builder()
                 .identificacion(request.getIdentificacion().trim())
                 .nombre(request.getNombre().trim())
                 .apellido(request.getApellido().trim())
                 .correo(normalizeEmail(request.getCorreo()))
                 .username(normalizeUsername(request.getUsername()))
                 .password(passwordEncoder.encode(request.getPassword()))
-                .roles(roles)
+                .roles(rols)
                 .build();
 
-        User savedUser = userRepository.save(user);
+        Usuario savedUser = userRepository.save(user);
 
         return toResponse(savedUser);
     }
 
     @Override
-    public UserResponseDTO findById(Long id) {
+    public UsuarioResponseDTO findById(Long id) {
         return toResponse(findEntityById(id));
     }
 
     @Override
-    public PageResponseDTO<UserResponseDTO> findAll(
+    public PageResponseDTO<UsuarioResponseDTO> findAll(
             Integer page,
             Integer size,
             String sortBy,
@@ -81,7 +81,7 @@ public class UserService implements IUserService {
                 direction
         );
 
-        Page<User> users = userRepository.findAll(pageable);
+        Page<Usuario> users = userRepository.findAll(pageable);
 
         return PageResponseDTO.fromPage(
                 users,
@@ -89,7 +89,7 @@ public class UserService implements IUserService {
         );
     }
 
-    private void validateCreateRequest(UserCreateRequestDTO request) {
+    private void validateCreateRequest(CrearUsuarioRequestDTO request) {
 
         String identificacion = request.getIdentificacion().trim();
         String correo = normalizeEmail(request.getCorreo());
@@ -114,14 +114,14 @@ public class UserService implements IUserService {
         }
     }
 
-    private Set<Role> findRoles(Set<Long> roleIds) {
+    private Set<Rol> findRoles(Set<Long> roleIds) {
 
-        List<Role> roles = roleRepository.findAllById(roleIds);
+        List<Rol> rols = roleRepository.findAllById(roleIds);
 
-        if (roles.size() != roleIds.size()) {
+        if (rols.size() != roleIds.size()) {
 
-            Set<Long> foundRoleIds = roles.stream()
-                    .map(Role::getId)
+            Set<Long> foundRoleIds = rols.stream()
+                    .map(Rol::getId)
                     .collect(Collectors.toSet());
 
             Set<Long> missingRoleIds = new HashSet<>(roleIds);
@@ -132,7 +132,7 @@ public class UserService implements IUserService {
             );
         }
 
-        boolean hasInactiveRoles = roles.stream()
+        boolean hasInactiveRoles = rols.stream()
                 .anyMatch(role -> !Boolean.TRUE.equals(role.getActivo()));
 
         if (hasInactiveRoles) {
@@ -141,20 +141,20 @@ public class UserService implements IUserService {
             );
         }
 
-        return new HashSet<>(roles);
+        return new HashSet<>(rols);
     }
 
-    private UserResponseDTO toResponse(User user) {
+    private UsuarioResponseDTO toResponse(Usuario user) {
 
-        UserResponseDTO response = converter.convert(
+        UsuarioResponseDTO response = converter.convert(
                 user,
-                UserResponseDTO.class
+                UsuarioResponseDTO.class
         );
 
-        Set<UserRoleResponseDTO> roleResponses = user.getRoles()
+        Set<RolUsuarioResponseDTO> roleResponses = user.getRoles()
                 .stream()
                 .map(role ->
-                        UserRoleResponseDTO.builder()
+                        RolUsuarioResponseDTO.builder()
                                 .id(role.getId())
                                 .nombre(role.getNombre().name())
                                 .descripcion(role.getDescripcion())
@@ -177,25 +177,25 @@ public class UserService implements IUserService {
 
     @Override
     @Transactional
-    public UserResponseDTO update(
+    public UsuarioResponseDTO update(
             Long id,
-            UserUpdateRequestDTO request
+            ActualizarUsuarioRequestDTO request
     ) {
 
-        User user = findEntityById(id);
+        Usuario user = findEntityById(id);
 
         validateUpdateRequest(id, request);
 
-        Set<Role> roles = findRoles(request.getRoleIds());
+        Set<Rol> rols = findRoles(request.getRoleIds());
 
         user.setIdentificacion(request.getIdentificacion().trim());
         user.setNombre(request.getNombre().trim());
         user.setApellido(request.getApellido().trim());
         user.setCorreo(normalizeEmail(request.getCorreo()));
         user.setUsername(normalizeUsername(request.getUsername()));
-        user.setRoles(roles);
+        user.setRoles(rols);
 
-        User updatedUser = userRepository.save(user);
+        Usuario updatedUser = userRepository.save(user);
 
         return toResponse(updatedUser);
     }
@@ -204,10 +204,10 @@ public class UserService implements IUserService {
     @Transactional
     public void changePassword(
             Long id,
-            ChangePasswordRequestDTO request
+            CambiarContrasenaRequestDTO request
     ) {
 
-        User user = findEntityById(id);
+        Usuario user = findEntityById(id);
 
         user.setPassword(
                 passwordEncoder.encode(request.getNewPassword())
@@ -218,13 +218,13 @@ public class UserService implements IUserService {
 
     @Override
     @Transactional
-    public UserResponseDTO changeActiveStatus(
+    public UsuarioResponseDTO changeActiveStatus(
             Long id,
             boolean active,
             String authenticatedUsername
     ) {
 
-        User user = findEntityById(id);
+        Usuario user = findEntityById(id);
 
         if (!active
                 && user.getUsername()
@@ -245,12 +245,12 @@ public class UserService implements IUserService {
 
         user.setActivo(active);
 
-        User updatedUser = userRepository.save(user);
+        Usuario updatedUser = userRepository.save(user);
 
         return toResponse(updatedUser);
     }
 
-    private User findEntityById(Long id) {
+    private Usuario findEntityById(Long id) {
 
         return userRepository.findById(id)
                 .orElseThrow(() ->
@@ -262,7 +262,7 @@ public class UserService implements IUserService {
 
     private void validateUpdateRequest(
             Long id,
-            UserUpdateRequestDTO request
+            ActualizarUsuarioRequestDTO request
     ) {
 
         String identificacion =

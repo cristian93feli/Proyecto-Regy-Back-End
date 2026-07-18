@@ -1,8 +1,8 @@
 package com.regyinventory.security;
 
-import com.regyinventory.entities.Permission;
-import com.regyinventory.entities.Role;
-import com.regyinventory.entities.User;
+import com.regyinventory.entities.Permiso;
+import com.regyinventory.entities.Rol;
+import com.regyinventory.entities.Usuario;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,10 +15,10 @@ import java.util.Set;
 @Getter
 public class CustomUserDetails implements UserDetails {
 
-    private final User user;
+    private final Usuario usuario;
 
-    public CustomUserDetails(User user) {
-        this.user = user;
+    public CustomUserDetails(Usuario user) {
+        this.usuario = user;
     }
 
     @Override
@@ -26,14 +26,14 @@ public class CustomUserDetails implements UserDetails {
 
         Set<GrantedAuthority> authorities = new HashSet<>();
 
-        for (Role role : user.getRoles()) {
+        for (Rol rol : usuario.getRoles()) {
 
-            authorities.add(new SimpleGrantedAuthority(role.getNombre().name()));
+            authorities.add(new SimpleGrantedAuthority(rol.getNombre().name()));
 
-            for (Permission permission : role.getPermissions()) {
+            for (Permiso permiso : rol.getPermisos()) {
 
                 authorities.add(
-                        new SimpleGrantedAuthority(permission.getNombre().name())
+                        new SimpleGrantedAuthority(permiso.getNombre().name())
                 );
 
             }
@@ -45,32 +45,32 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return usuario.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return user.getUsername();
+        return usuario.getUsername();
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return user.getActivo();
+        return usuario.getActivo();
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return user.getActivo();
+        return usuario.getActivo();
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return user.getActivo();
+        return usuario.getActivo();
     }
 
     @Override
     public boolean isEnabled() {
-        return user.getActivo();
+        return usuario.getActivo();
     }
 
 }

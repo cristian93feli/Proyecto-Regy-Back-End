@@ -1,13 +1,13 @@
 package com.regyinventory.config;
 
-import com.regyinventory.entities.Permission;
-import com.regyinventory.entities.Role;
-import com.regyinventory.entities.User;
-import com.regyinventory.enums.PermissionName;
-import com.regyinventory.enums.RoleName;
-import com.regyinventory.repository.IPermissionRepository;
-import com.regyinventory.repository.IRoleRepository;
-import com.regyinventory.repository.IUserRepository;
+import com.regyinventory.entities.Permiso;
+import com.regyinventory.entities.Rol;
+import com.regyinventory.entities.Usuario;
+import com.regyinventory.enums.NombrePermiso;
+import com.regyinventory.enums.NombreRol;
+import com.regyinventory.repository.IPermisoRepository;
+import com.regyinventory.repository.IRolRepository;
+import com.regyinventory.repository.IUsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,55 +24,55 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-    private final IPermissionRepository permissionRepository;
-    private final IRoleRepository roleRepository;
-    private final IUserRepository userRepository;
+    private final IPermisoRepository permisoRepository;
+    private final IRolRepository rolRepository;
+    private final IUsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) {
 
-        Set<Permission> allPermissions = createPermissions();
+        Set<Permiso> allPermisos = createPermissions();
 
-        Role adminRole = createOrUpdateRole(
-                RoleName.ROLE_ADMIN,
+        Rol adminRol = createOrUpdateRole(
+                NombreRol.ROLE_ADMIN,
                 "Administrador general del sistema",
-                allPermissions
+                allPermisos
         );
 
         createOrUpdateRole(
-                RoleName.ROLE_GUARDIAN,
+                NombreRol.ROLE_GUARDIAN,
                 "Responsable operativo del inventario",
                 selectPermissions(
-                        allPermissions,
+                        allPermisos,
                         guardianPermissions()
                 )
         );
 
         createOrUpdateRole(
-                RoleName.ROLE_PACKER,
+                NombreRol.ROLE_PACKER,
                 "Responsable de preparación y reposición de empaque",
                 selectPermissions(
-                        allPermissions,
+                        allPermisos,
                         packerPermissions()
                 )
         );
 
-        createAdminUser(adminRole);
+        createAdminUser(adminRol);
     }
 
-    private Set<Permission> createPermissions() {
+    private Set<Permiso> createPermissions() {
 
-        return Arrays.stream(PermissionName.values())
-                .map(permissionName ->
-                        permissionRepository.findByNombre(permissionName)
+        return Arrays.stream(NombrePermiso.values())
+                .map(nombrePermiso ->
+                        permisoRepository.findByNombre(nombrePermiso)
                                 .orElseGet(() ->
-                                        permissionRepository.save(
-                                                Permission.builder()
-                                                        .nombre(permissionName)
+                                        permisoRepository.save(
+                                                Permiso.builder()
+                                                        .nombre(nombrePermiso)
                                                         .descripcion(
-                                                                "Permiso " + permissionName.name()
+                                                                "Permiso " + nombrePermiso.name()
                                                         )
                                                         .build()
                                         )
@@ -81,99 +81,99 @@ public class DataInitializer implements CommandLineRunner {
                 .collect(Collectors.toSet());
     }
 
-    private Role createOrUpdateRole(
-            RoleName roleName,
+    private Rol createOrUpdateRole(
+            NombreRol nombreRol,
             String description,
-            Set<Permission> permissions
+            Set<Permiso> permisos
     ) {
 
-        Role role = roleRepository.findByNombre(roleName)
+        Rol rol = rolRepository.findByNombre(nombreRol)
                 .orElseGet(() ->
-                        Role.builder()
-                                .nombre(roleName)
+                        Rol.builder()
+                                .nombre(nombreRol)
                                 .descripcion(description)
                                 .build()
                 );
 
-        role.setDescripcion(description);
-        role.setPermissions(new HashSet<>(permissions));
+        rol.setDescripcion(description);
+        rol.setPermisos(new HashSet<>(permisos));
 
-        return roleRepository.save(role);
+        return rolRepository.save(rol);
     }
 
-    private Set<Permission> selectPermissions(
-            Set<Permission> allPermissions,
-            Set<PermissionName> requiredPermissions
+    private Set<Permiso> selectPermissions(
+            Set<Permiso> allPermisos,
+            Set<NombrePermiso> requiredPermissions
     ) {
 
-        return allPermissions.stream()
-                .filter(permission ->
-                        requiredPermissions.contains(permission.getNombre())
+        return allPermisos.stream()
+                .filter(permiso ->
+                        requiredPermissions.contains(permiso.getNombre())
                 )
                 .collect(Collectors.toSet());
     }
 
-    private Set<PermissionName> guardianPermissions() {
+    private Set<NombrePermiso> guardianPermissions() {
 
         return EnumSet.of(
-                PermissionName.PRODUCT_CREATE,
-                PermissionName.PRODUCT_READ,
-                PermissionName.PRODUCT_UPDATE,
-                PermissionName.PRODUCT_DELETE,
+                NombrePermiso.PRODUCT_CREATE,
+                NombrePermiso.PRODUCT_READ,
+                NombrePermiso.PRODUCT_UPDATE,
+                NombrePermiso.PRODUCT_DELETE,
 
-                PermissionName.WAREHOUSE_CREATE,
-                PermissionName.WAREHOUSE_READ,
-                PermissionName.WAREHOUSE_UPDATE,
+                NombrePermiso.WAREHOUSE_CREATE,
+                NombrePermiso.WAREHOUSE_READ,
+                NombrePermiso.WAREHOUSE_UPDATE,
 
-                PermissionName.LOCATION_CREATE,
-                PermissionName.LOCATION_READ,
-                PermissionName.LOCATION_UPDATE,
+                NombrePermiso.LOCATION_CREATE,
+                NombrePermiso.LOCATION_READ,
+                NombrePermiso.LOCATION_UPDATE,
 
-                PermissionName.PACKING_ZONE_READ,
+                NombrePermiso.PACKING_ZONE_READ,
 
-                PermissionName.STOCK_READ,
-                PermissionName.STOCK_RECEIVE,
-                PermissionName.STOCK_MOVE,
+                NombrePermiso.STOCK_READ,
+                NombrePermiso.STOCK_RECEIVE,
+                NombrePermiso.STOCK_MOVE,
 
-                PermissionName.WAREHOUSE_AUDIT,
-                PermissionName.LOCATION_AUDIT,
+                NombrePermiso.WAREHOUSE_AUDIT,
+                NombrePermiso.LOCATION_AUDIT,
 
-                PermissionName.REPLENISHMENT_REQUEST_CREATE,
-                PermissionName.REPLENISHMENT_REQUEST_READ,
-                PermissionName.REPLENISHMENT_REQUEST_COMPLETE,
-                PermissionName.REPLENISHMENT_REQUEST_CANCEL
+                NombrePermiso.REPLENISHMENT_REQUEST_CREATE,
+                NombrePermiso.REPLENISHMENT_REQUEST_READ,
+                NombrePermiso.REPLENISHMENT_REQUEST_COMPLETE,
+                NombrePermiso.REPLENISHMENT_REQUEST_CANCEL
         );
     }
 
-    private Set<PermissionName> packerPermissions() {
+    private Set<NombrePermiso> packerPermissions() {
 
         return EnumSet.of(
-                PermissionName.PRODUCT_READ,
-                PermissionName.PACKING_ZONE_READ,
-                PermissionName.STOCK_READ,
-                PermissionName.PACKING_ZONE_AUDIT,
+                NombrePermiso.PRODUCT_READ,
+                NombrePermiso.PACKING_ZONE_READ,
+                NombrePermiso.STOCK_READ,
+                NombrePermiso.PACKING_ZONE_AUDIT,
 
-                PermissionName.REPLENISHMENT_REQUEST_CREATE,
-                PermissionName.REPLENISHMENT_REQUEST_READ
+                NombrePermiso.REPLENISHMENT_REQUEST_CREATE,
+                NombrePermiso.REPLENISHMENT_REQUEST_READ
         );
     }
 
-    private void createAdminUser(Role adminRole) {
+    private void createAdminUser(Rol adminRol) {
 
-        if (userRepository.existsByUsername("admin")) {
+        if (usuarioRepository.existsByUsername("admin")) {
             return;
         }
 
-        User admin = User.builder()
+        Usuario admin = Usuario.builder()
                 .identificacion("ADMIN-001")
                 .nombre("Administrador")
                 .apellido("REGY")
                 .correo("admin@regy.local")
                 .username("admin")
                 .password(passwordEncoder.encode("Admin123*"))
-                .roles(Set.of(adminRole))
+                .roles(Set.of(adminRol))
                 .build();
 
-        userRepository.save(admin);
+        usuarioRepository.save(admin);
     }
 }

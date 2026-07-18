@@ -1,6 +1,6 @@
 package com.regyinventory.security;
 
-import com.regyinventory.entities.Role;
+import com.regyinventory.entities.Rol;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -29,19 +29,19 @@ public class JwtService {
 
         Map<String, Object> claims = new HashMap<>();
 
-        claims.put("id", userDetails.getUser().getId());
+        claims.put("id", userDetails.getUsuario().getId());
         claims.put("username", userDetails.getUsername());
 
-        String nombreCompleto = userDetails.getUser().getNombre()
+        String nombreCompleto = userDetails.getUsuario().getNombre()
                 + " "
-                + userDetails.getUser().getApellido();
+                + userDetails.getUsuario().getApellido();
 
         claims.put("nombre", nombreCompleto.trim());
 
-        List<String> roles = userDetails.getUser()
+        List<String> roles = userDetails.getUsuario()
                 .getRoles()
                 .stream()
-                .map(Role::getNombre)
+                .map(Rol::getNombre)
                 .map(Enum::name)
                 .sorted()
                 .toList();

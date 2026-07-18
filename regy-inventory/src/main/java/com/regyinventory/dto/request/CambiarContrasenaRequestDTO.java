@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ChangePasswordRequestDTO {
+public class CambiarContrasenaRequestDTO {
 
     @NotBlank(message = "La nueva contraseña es obligatoria")
     @Size(min = 8, max = 100, message = "La contraseña debe tener mínimo 8 caracteres")

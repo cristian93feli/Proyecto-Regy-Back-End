@@ -11,11 +11,13 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserRoleResponseDTO {
+public class RolResponseDTO {
 
     private Long id;
 
     private String nombre;
 
     private String descripcion;
+
+    private Boolean activo;
 }

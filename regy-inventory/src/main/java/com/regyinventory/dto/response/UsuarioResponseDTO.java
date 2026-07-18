@@ -14,7 +14,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponseDTO {
+public class UsuarioResponseDTO {
 
     private Long id;
 
@@ -34,5 +34,5 @@ public class UserResponseDTO {
 
     private LocalDateTime fechaActualizacion;
 
-    private Set<UserRoleResponseDTO> roles;
+    private Set<RolUsuarioResponseDTO> roles;
 }

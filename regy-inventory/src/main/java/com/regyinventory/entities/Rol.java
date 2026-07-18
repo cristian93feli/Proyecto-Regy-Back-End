@@ -1,6 +1,6 @@
 package com.regyinventory.entities;
 
-import com.regyinventory.enums.RoleName;
+import com.regyinventory.enums.NombreRol;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,13 +14,13 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Role extends BaseEntity{
+public class Rol extends BaseEntity{
 
 
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true)
-    private RoleName nombre;
+    private NombreRol nombre;
 
     @Column(length = 250)
     private String descripcion;
@@ -28,16 +28,16 @@ public class Role extends BaseEntity{
 
     @ManyToMany(mappedBy = "roles")
     @Builder.Default
-    private Set<User> usuarios = new HashSet<>();
+    private Set<Usuario> usuarios = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
 
     @JoinTable(
-            name = "roles_permissions",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
+            name = "roles_permisos",
+            joinColumns = @JoinColumn(name = "rol_id"),
+            inverseJoinColumns = @JoinColumn(name = "permiso_id")
     )
     @Builder.Default
-    private Set<Permission> permissions = new HashSet<>();
+    private Set<Permiso> permisos = new HashSet<>();
 
 }

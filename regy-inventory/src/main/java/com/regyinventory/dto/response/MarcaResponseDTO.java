@@ -6,12 +6,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoleResponseDTO {
+public class MarcaResponseDTO {
 
     private Long id;
 
@@ -20,4 +22,8 @@ public class RoleResponseDTO {
     private String descripcion;
 
     private Boolean activo;
+
+    private LocalDateTime fechaCreacion;
+
+    private LocalDateTime fechaActualizacion;
 }

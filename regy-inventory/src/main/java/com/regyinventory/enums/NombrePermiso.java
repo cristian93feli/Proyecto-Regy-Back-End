@@ -1,6 +1,6 @@
 package com.regyinventory.enums;
 
-public enum PermissionName {
+public enum NombrePermiso {
 
     // Productos
     PRODUCT_CREATE,

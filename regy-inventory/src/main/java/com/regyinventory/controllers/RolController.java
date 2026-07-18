@@ -1,8 +1,8 @@
 package com.regyinventory.controllers;
 
 import com.regyinventory.dto.response.ApiResponse;
-import com.regyinventory.dto.response.RoleResponseDTO;
-import com.regyinventory.service.contracts.IRoleService;
+import com.regyinventory.dto.response.RolResponseDTO;
+import com.regyinventory.service.contracts.IRolService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,9 +21,9 @@ import java.util.List;
         description = "Consulta del catálogo de roles"
 )
 @SecurityRequirement(name = "bearerAuth")
-public class RoleController {
+public class RolController {
 
-    private final IRoleService roleService;
+    private final IRolService roleService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('USER_READ')")
@@ -31,11 +31,11 @@ public class RoleController {
             summary = "Listar roles",
             description = "Obtiene el catálogo de roles disponibles"
     )
-    public ResponseEntity<ApiResponse<List<RoleResponseDTO>>> findAll(
+    public ResponseEntity<ApiResponse<List<RolResponseDTO>>> findAll(
             @RequestParam(defaultValue = "true") boolean activeOnly
     ) {
 
-        List<RoleResponseDTO> response =
+        List<RolResponseDTO> response =
                 roleService.findAll(activeOnly);
 
         return ResponseEntity.ok(
@@ -52,11 +52,11 @@ public class RoleController {
             summary = "Consultar rol",
             description = "Obtiene un rol por su identificador"
     )
-    public ResponseEntity<ApiResponse<RoleResponseDTO>> findById(
+    public ResponseEntity<ApiResponse<RolResponseDTO>> findById(
             @PathVariable Long id
     ) {
 
-        RoleResponseDTO response =
+        RolResponseDTO response =
                 roleService.findById(id);
 
         return ResponseEntity.ok(

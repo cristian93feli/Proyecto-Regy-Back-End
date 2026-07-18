@@ -1,7 +1,7 @@
 package com.regyinventory.security;
 
-import com.regyinventory.entities.User;
-import com.regyinventory.repository.IUserRepository;
+import com.regyinventory.entities.Usuario;
+import com.regyinventory.repository.IUsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
@@ -10,13 +10,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final IUserRepository repository;
+    private final IUsuarioRepository repository;
 
     @Override
     public UserDetails loadUserByUsername(String username)
             throws UsernameNotFoundException {
 
-        User user = repository.findByUsername(username)
+        Usuario user = repository.findByUsername(username)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("Usuario no encontrado"));
 

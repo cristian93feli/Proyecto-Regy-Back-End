@@ -1,10 +1,10 @@
 package com.regyinventory.service.implementation;
 
-import com.regyinventory.dto.response.RoleResponseDTO;
-import com.regyinventory.entities.Role;
+import com.regyinventory.dto.response.RolResponseDTO;
+import com.regyinventory.entities.Rol;
 import com.regyinventory.exceptions.ResourceNotFoundException;
-import com.regyinventory.repository.IRoleRepository;
-import com.regyinventory.service.contracts.IRoleService;
+import com.regyinventory.repository.IRolRepository;
+import com.regyinventory.service.contracts.IRolService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,12 +15,12 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class RoleService implements IRoleService {
+public class RolService implements IRolService {
 
-    private final IRoleRepository roleRepository;
+    private final IRolRepository roleRepository;
 
     @Override
-    public List<RoleResponseDTO> findAll(boolean activeOnly) {
+    public List<RolResponseDTO> findAll(boolean activeOnly) {
 
         return roleRepository.findAll()
                 .stream()
@@ -38,25 +38,25 @@ public class RoleService implements IRoleService {
     }
 
     @Override
-    public RoleResponseDTO findById(Long id) {
+    public RolResponseDTO findById(Long id) {
 
-        Role role = roleRepository.findById(id)
+        Rol rol = roleRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "No se encontró el rol con ID " + id
                         )
                 );
 
-        return toResponse(role);
+        return toResponse(rol);
     }
 
-    private RoleResponseDTO toResponse(Role role) {
+    private RolResponseDTO toResponse(Rol rol) {
 
-        return RoleResponseDTO.builder()
-                .id(role.getId())
-                .nombre(role.getNombre().name())
-                .descripcion(role.getDescripcion())
-                .activo(role.getActivo())
+        return RolResponseDTO.builder()
+                .id(rol.getId())
+                .nombre(rol.getNombre().name())
+                .descripcion(rol.getDescripcion())
+                .activo(rol.getActivo())
                 .build();
     }
 }

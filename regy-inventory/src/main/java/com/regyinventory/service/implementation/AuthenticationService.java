@@ -36,7 +36,7 @@ public class AuthenticationService implements IAuthenticationService {
 
         String token = jwtService.generateToken(userDetails);
 
-        List<String> roles = userDetails.getUser()
+        List<String> roles = userDetails.getUsuario()
                 .getRoles()
                 .stream()
                 .map(role -> role.getNombre().name())
@@ -44,13 +44,13 @@ public class AuthenticationService implements IAuthenticationService {
                 .toList();
 
         String nombreCompleto = (
-                userDetails.getUser().getNombre()
+                userDetails.getUsuario().getNombre()
                         + " "
-                        + userDetails.getUser().getApellido()
+                        + userDetails.getUsuario().getApellido()
         ).trim();
 
         return LoginResponseDTO.builder()
-                .id(userDetails.getUser().getId())
+                .id(userDetails.getUsuario().getId())
                 .username(userDetails.getUsername())
                 .nombre(nombreCompleto)
                 .roles(roles)

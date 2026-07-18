@@ -1,17 +1,17 @@
 package com.regyinventory.repository;
 
-import com.regyinventory.entities.User;
+import com.regyinventory.entities.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface IUserRepository extends JpaRepository<User, Long> {
+public interface IUsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    Optional<User> findByUsername(String username);
+    Optional<Usuario> findByUsername(String username);
 
-    Optional<User> findByCorreo(String correo);
+    Optional<Usuario> findByCorreo(String correo);
 
     boolean existsByUsername(String username);
 
