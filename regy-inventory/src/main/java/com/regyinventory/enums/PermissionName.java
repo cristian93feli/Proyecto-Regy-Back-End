@@ -1,0 +1,57 @@
+package com.regyinventory.enums;
+
+public enum PermissionName {
+
+    // Productos
+    PRODUCT_CREATE,
+    PRODUCT_READ,
+    PRODUCT_UPDATE,
+    PRODUCT_DELETE,
+
+    // Usuarios
+    USER_CREATE,
+    USER_READ,
+    USER_UPDATE,
+    USER_ENABLE_DISABLE,
+
+    // Depósitos
+    WAREHOUSE_CREATE,
+    WAREHOUSE_READ,
+    WAREHOUSE_UPDATE,
+    WAREHOUSE_DELETE,
+
+    // Ubicaciones
+    LOCATION_CREATE,
+    LOCATION_READ,
+    LOCATION_UPDATE,
+    LOCATION_DELETE,
+
+    // Zonas de empaque
+    PACKING_ZONE_CREATE,
+    PACKING_ZONE_READ,
+    PACKING_ZONE_UPDATE,
+    PACKING_ZONE_DELETE,
+
+    // Inventario
+    STOCK_READ,
+    STOCK_RECEIVE,
+    STOCK_MOVE,
+
+    // Auditorías
+    WAREHOUSE_AUDIT,
+    LOCATION_AUDIT,
+    PACKING_ZONE_AUDIT,
+
+    // Solicitudes de reposición
+    REPLENISHMENT_REQUEST_CREATE,
+    REPLENISHMENT_REQUEST_READ,
+    REPLENISHMENT_REQUEST_COMPLETE,
+    REPLENISHMENT_REQUEST_CANCEL,
+
+    // Logs
+    LOG_READ,
+
+    // Configuración
+    SYSTEM_CONFIGURATION_READ,
+    SYSTEM_CONFIGURATION_UPDATE
+}
