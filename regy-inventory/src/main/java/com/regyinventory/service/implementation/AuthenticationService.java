@@ -26,7 +26,7 @@ public class AuthenticationService implements IAuthenticationService {
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
-                                request.getUsername(),
+                                request.getUsername().trim().toLowerCase(),
                                 request.getPassword()
                         )
                 );
@@ -34,12 +34,13 @@ public class AuthenticationService implements IAuthenticationService {
         CustomUserDetails userDetails =
                 (CustomUserDetails) authentication.getPrincipal();
 
-        String token = jwtService.generateToken(userDetails);
+        String token =
+                jwtService.generateToken(userDetails);
 
         List<String> roles = userDetails.getUsuario()
                 .getRoles()
                 .stream()
-                .map(role -> role.getNombre().name())
+                .map(rol -> rol.getNombre().name())
                 .sorted()
                 .toList();
 

@@ -10,6 +10,7 @@ import com.regyinventory.exceptions.ResourceNotFoundException;
 import com.regyinventory.repository.IMarcaRepository;
 import com.regyinventory.service.contracts.IMarcaService;
 import com.regyinventory.utils.PageableUtil;
+import com.regyinventory.utils.constants.mensajes.MensajesError;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -32,19 +33,36 @@ public class MarcaService implements IMarcaService {
             CrearMarcaRequestDTO request
     ) {
 
-        validarNombre(request.getNombre());
+        String nombre =
+                request.getNombre().trim();
 
-        Marca marca = modelMapper.map(request, Marca.class);
+        validarNombreCreacion(nombre);
 
-        Marca guardada = marcaRepository.save(marca);
+        Marca marca =
+                modelMapper.map(
+                        request,
+                        Marca.class
+                );
 
-        return convertir(guardada);
+        marca.setNombre(nombre);
+        marca.setDescripcion(
+                normalizarDescripcion(
+                        request.getDescripcion()
+                )
+        );
+
+        Marca marcaGuardada =
+                marcaRepository.save(marca);
+
+        return convertirRespuesta(marcaGuardada);
     }
 
     @Override
     public MarcaResponseDTO buscarPorId(Long id) {
 
-        return convertir(buscarEntidad(id));
+        return convertirRespuesta(
+                buscarEntidad(id)
+        );
     }
 
     @Override
@@ -55,55 +73,20 @@ public class MarcaService implements IMarcaService {
             String direction
     ) {
 
-        Pageable pageable =
-                PageableUtil.create(
-                        page,
-                        size,
-                        sortBy,
-                        direction
-                );
+        Pageable pageable = PageableUtil.create(
+                page,
+                size,
+                sortBy,
+                direction
+        );
 
         Page<Marca> resultado =
                 marcaRepository.findAll(pageable);
 
         return PageResponseDTO.fromPage(
                 resultado,
-                this::convertir
-
+                this::convertirRespuesta
         );
-    }
-
-    private Marca buscarEntidad(Long id) {
-
-        return marcaRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "No existe la marca con id " + id
-                        ));
-    }
-
-    private void validarNombre(String nombre) {
-
-        if (marcaRepository.existsByNombreIgnoreCase(
-                nombre.trim()
-        )) {
-
-            throw new BusinessException(
-                    "Ya existe una marca con ese nombre"
-            );
-        }
-
-    }
-
-    private MarcaResponseDTO convertir(
-            Marca marca
-    ) {
-
-        return modelMapper.map(
-                marca,
-                MarcaResponseDTO.class
-        );
-
     }
 
     @Override
@@ -113,26 +96,30 @@ public class MarcaService implements IMarcaService {
             ActualizarMarcaRequestDTO request
     ) {
 
-        Marca marca = buscarEntidad(id);
+        Marca marca =
+                buscarEntidad(id);
 
-        validarActualizacion(
+        String nombre =
+                request.getNombre().trim();
+
+        validarNombreActualizacion(
                 id,
-                request.getNombre()
+                nombre
         );
 
-        marca.setNombre(
-                request.getNombre().trim()
-        );
-
+        marca.setNombre(nombre);
         marca.setDescripcion(
-                request.getDescripcion()
+                normalizarDescripcion(
+                        request.getDescripcion()
+                )
         );
 
-        Marca actualizada =
+        Marca marcaActualizada =
                 marcaRepository.save(marca);
 
-        return convertir(actualizada);
-
+        return convertirRespuesta(
+                marcaActualizada
+        );
     }
 
     @Override
@@ -142,55 +129,114 @@ public class MarcaService implements IMarcaService {
             boolean activo
     ) {
 
-        Marca marca = buscarEntidad(id);
+        Marca marca =
+                buscarEntidad(id);
 
-        if (Boolean.TRUE.equals(marca.getActivo()) == activo) {
+        if (Boolean.TRUE.equals(
+                marca.getActivo()
+        ) == activo) {
 
             throw new BusinessException(
                     activo
-                            ? "La marca ya se encuentra activa"
-                            : "La marca ya se encuentra inactiva"
+                            ? MensajesError.Marca.YA_ACTIVA
+                            : MensajesError.Marca.YA_INACTIVA
             );
         }
 
         marca.setActivo(activo);
 
-        Marca actualizada =
+        Marca marcaActualizada =
                 marcaRepository.save(marca);
 
-        return convertir(actualizada);
-    }
-
-    private void validarActualizacion(
-            Long id,
-            String nombre
-    ) {
-
-        if (marcaRepository
-                .existsByNombreIgnoreCaseAndIdNot(
-                        nombre.trim(),
-                        id
-                )) {
-
-            throw new BusinessException(
-                    "Ya existe otra marca con ese nombre"
-            );
-        }
+        return convertirRespuesta(
+                marcaActualizada
+        );
     }
 
     @Override
     @Transactional
     public void eliminar(Long id) {
 
-        Marca marca = buscarEntidad(id);
+        Marca marca =
+                buscarEntidad(id);
 
         try {
             marcaRepository.delete(marca);
             marcaRepository.flush();
+
         } catch (DataIntegrityViolationException exception) {
+
             throw new BusinessException(
-                    "No se puede eliminar la marca porque tiene registros asociados"
+                    MensajesError.Marca
+                            .TIENE_REGISTROS_ASOCIADOS
             );
         }
+    }
+
+    private Marca buscarEntidad(Long id) {
+
+        return marcaRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                String.format(
+                                        MensajesError.Marca.NO_EXISTE,
+                                        id
+                                )
+                        )
+                );
+    }
+
+    private void validarNombreCreacion(
+            String nombre
+    ) {
+
+        if (marcaRepository
+                .existsByNombreIgnoreCase(nombre)) {
+
+            throw new BusinessException(
+                    MensajesError.Marca.NOMBRE_DUPLICADO
+            );
+        }
+    }
+
+    private void validarNombreActualizacion(
+            Long id,
+            String nombre
+    ) {
+
+        if (marcaRepository
+                .existsByNombreIgnoreCaseAndIdNot(
+                        nombre,
+                        id
+                )) {
+
+            throw new BusinessException(
+                    MensajesError.Marca
+                            .OTRO_NOMBRE_DUPLICADO
+            );
+        }
+    }
+
+    private MarcaResponseDTO convertirRespuesta(
+            Marca marca
+    ) {
+
+        return modelMapper.map(
+                marca,
+                MarcaResponseDTO.class
+        );
+    }
+
+    private String normalizarDescripcion(
+            String descripcion
+    ) {
+
+        if (descripcion == null
+                || descripcion.isBlank()) {
+
+            return null;
+        }
+
+        return descripcion.trim();
     }
 }

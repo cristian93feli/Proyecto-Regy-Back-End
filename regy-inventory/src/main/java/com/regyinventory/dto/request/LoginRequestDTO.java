@@ -1,5 +1,6 @@
 package com.regyinventory.dto.request;
 
+import com.regyinventory.utils.constants.mensajes.MensajesValidacion;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,10 +9,13 @@ import lombok.Setter;
 @Setter
 public class LoginRequestDTO {
 
-    @NotBlank(message = "El usuario es obligatorio")
+    @NotBlank(
+            message = MensajesValidacion.Login.USUARIO_OBLIGATORIO
+    )
     private String username;
 
-    @NotBlank(message = "La contraseña es obligatoria")
+    @NotBlank(
+            message = MensajesValidacion.Login.CONTRASENA_OBLIGATORIA
+    )
     private String password;
-
 }

@@ -1,12 +1,12 @@
 package com.regyinventory.service.implementation;
 
-
+import org.modelmapper.ModelMapper;
+import com.regyinventory.dto.request.ActualizarUsuarioRequestDTO;
 import com.regyinventory.dto.request.CambiarContrasenaRequestDTO;
 import com.regyinventory.dto.request.CrearUsuarioRequestDTO;
-import com.regyinventory.dto.request.ActualizarUsuarioRequestDTO;
 import com.regyinventory.dto.response.PageResponseDTO;
-import com.regyinventory.dto.response.UsuarioResponseDTO;
 import com.regyinventory.dto.response.RolUsuarioResponseDTO;
+import com.regyinventory.dto.response.UsuarioResponseDTO;
 import com.regyinventory.entities.Rol;
 import com.regyinventory.entities.Usuario;
 import com.regyinventory.exceptions.BusinessException;
@@ -15,7 +15,7 @@ import com.regyinventory.repository.IRolRepository;
 import com.regyinventory.repository.IUsuarioRepository;
 import com.regyinventory.service.contracts.IUsuarioService;
 import com.regyinventory.utils.PageableUtil;
-import com.regyinventory.utils.mapper.IGenericConverter;
+import com.regyinventory.utils.constants.mensajes.MensajesError;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,37 +33,58 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class UsuarioService implements IUsuarioService {
 
-    private final IUsuarioRepository userRepository;
-    private final IRolRepository roleRepository;
+    private final IUsuarioRepository usuarioRepository;
+    private final IRolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
-    private final IGenericConverter converter;
+    private final ModelMapper modelMapper;
 
     @Override
     @Transactional
-    public UsuarioResponseDTO create(CrearUsuarioRequestDTO request) {
+    public UsuarioResponseDTO create(
+            CrearUsuarioRequestDTO request
+    ) {
 
-        validateCreateRequest(request);
+        validarCreacion(request);
 
-        Set<Rol> rols = findRoles(request.getRoleIds());
+        Set<Rol> roles =
+                buscarRoles(request.getRoleIds());
 
-        Usuario user = Usuario.builder()
-                .identificacion(request.getIdentificacion().trim())
-                .nombre(request.getNombre().trim())
-                .apellido(request.getApellido().trim())
-                .correo(normalizeEmail(request.getCorreo()))
-                .username(normalizeUsername(request.getUsername()))
-                .password(passwordEncoder.encode(request.getPassword()))
-                .roles(rols)
+        Usuario usuario = Usuario.builder()
+                .identificacion(
+                        request.getIdentificacion().trim()
+                )
+                .nombre(
+                        request.getNombre().trim()
+                )
+                .apellido(
+                        request.getApellido().trim()
+                )
+                .correo(
+                        normalizarCorreo(request.getCorreo())
+                )
+                .username(
+                        normalizarUsername(request.getUsername())
+                )
+                .password(
+                        passwordEncoder.encode(
+                                request.getPassword()
+                        )
+                )
+                .roles(roles)
                 .build();
 
-        Usuario savedUser = userRepository.save(user);
+        Usuario usuarioGuardado =
+                usuarioRepository.save(usuario);
 
-        return toResponse(savedUser);
+        return convertirRespuesta(usuarioGuardado);
     }
 
     @Override
     public UsuarioResponseDTO findById(Long id) {
-        return toResponse(findEntityById(id));
+
+        return convertirRespuesta(
+                buscarEntidad(id)
+        );
     }
 
     @Override
@@ -81,98 +102,13 @@ public class UsuarioService implements IUsuarioService {
                 direction
         );
 
-        Page<Usuario> users = userRepository.findAll(pageable);
+        Page<Usuario> usuarios =
+                usuarioRepository.findAll(pageable);
 
         return PageResponseDTO.fromPage(
-                users,
-                this::toResponse
+                usuarios,
+                this::convertirRespuesta
         );
-    }
-
-    private void validateCreateRequest(CrearUsuarioRequestDTO request) {
-
-        String identificacion = request.getIdentificacion().trim();
-        String correo = normalizeEmail(request.getCorreo());
-        String username = normalizeUsername(request.getUsername());
-
-        if (userRepository.existsByIdentificacion(identificacion)) {
-            throw new BusinessException(
-                    "Ya existe un usuario con esa identificación"
-            );
-        }
-
-        if (userRepository.existsByCorreo(correo)) {
-            throw new BusinessException(
-                    "Ya existe un usuario con ese correo"
-            );
-        }
-
-        if (userRepository.existsByUsername(username)) {
-            throw new BusinessException(
-                    "Ya existe un usuario con ese nombre de usuario"
-            );
-        }
-    }
-
-    private Set<Rol> findRoles(Set<Long> roleIds) {
-
-        List<Rol> rols = roleRepository.findAllById(roleIds);
-
-        if (rols.size() != roleIds.size()) {
-
-            Set<Long> foundRoleIds = rols.stream()
-                    .map(Rol::getId)
-                    .collect(Collectors.toSet());
-
-            Set<Long> missingRoleIds = new HashSet<>(roleIds);
-            missingRoleIds.removeAll(foundRoleIds);
-
-            throw new BusinessException(
-                    "No existen los roles con ID: " + missingRoleIds
-            );
-        }
-
-        boolean hasInactiveRoles = rols.stream()
-                .anyMatch(role -> !Boolean.TRUE.equals(role.getActivo()));
-
-        if (hasInactiveRoles) {
-            throw new BusinessException(
-                    "No se pueden asignar roles inactivos"
-            );
-        }
-
-        return new HashSet<>(rols);
-    }
-
-    private UsuarioResponseDTO toResponse(Usuario user) {
-
-        UsuarioResponseDTO response = converter.convert(
-                user,
-                UsuarioResponseDTO.class
-        );
-
-        Set<RolUsuarioResponseDTO> roleResponses = user.getRoles()
-                .stream()
-                .map(role ->
-                        RolUsuarioResponseDTO.builder()
-                                .id(role.getId())
-                                .nombre(role.getNombre().name())
-                                .descripcion(role.getDescripcion())
-                                .build()
-                )
-                .collect(Collectors.toSet());
-
-        response.setRoles(roleResponses);
-
-        return response;
-    }
-
-    private String normalizeEmail(String email) {
-        return email.trim().toLowerCase();
-    }
-
-    private String normalizeUsername(String username) {
-        return username.trim().toLowerCase();
     }
 
     @Override
@@ -182,22 +118,40 @@ public class UsuarioService implements IUsuarioService {
             ActualizarUsuarioRequestDTO request
     ) {
 
-        Usuario user = findEntityById(id);
+        Usuario usuario =
+                buscarEntidad(id);
 
-        validateUpdateRequest(id, request);
+        validarActualizacion(id, request);
 
-        Set<Rol> rols = findRoles(request.getRoleIds());
+        Set<Rol> roles =
+                buscarRoles(request.getRoleIds());
 
-        user.setIdentificacion(request.getIdentificacion().trim());
-        user.setNombre(request.getNombre().trim());
-        user.setApellido(request.getApellido().trim());
-        user.setCorreo(normalizeEmail(request.getCorreo()));
-        user.setUsername(normalizeUsername(request.getUsername()));
-        user.setRoles(rols);
+        usuario.setIdentificacion(
+                request.getIdentificacion().trim()
+        );
 
-        Usuario updatedUser = userRepository.save(user);
+        usuario.setNombre(
+                request.getNombre().trim()
+        );
 
-        return toResponse(updatedUser);
+        usuario.setApellido(
+                request.getApellido().trim()
+        );
+
+        usuario.setCorreo(
+                normalizarCorreo(request.getCorreo())
+        );
+
+        usuario.setUsername(
+                normalizarUsername(request.getUsername())
+        );
+
+        usuario.setRoles(roles);
+
+        Usuario usuarioActualizado =
+                usuarioRepository.save(usuario);
+
+        return convertirRespuesta(usuarioActualizado);
     }
 
     @Override
@@ -207,13 +161,16 @@ public class UsuarioService implements IUsuarioService {
             CambiarContrasenaRequestDTO request
     ) {
 
-        Usuario user = findEntityById(id);
+        Usuario usuario =
+                buscarEntidad(id);
 
-        user.setPassword(
-                passwordEncoder.encode(request.getNewPassword())
+        usuario.setPassword(
+                passwordEncoder.encode(
+                        request.getNewPassword()
+                )
         );
 
-        userRepository.save(user);
+        usuarioRepository.save(usuario);
     }
 
     @Override
@@ -224,43 +181,85 @@ public class UsuarioService implements IUsuarioService {
             String authenticatedUsername
     ) {
 
-        Usuario user = findEntityById(id);
+        Usuario usuario =
+                buscarEntidad(id);
 
         if (!active
-                && user.getUsername()
+                && usuario.getUsername()
                 .equalsIgnoreCase(authenticatedUsername)) {
 
             throw new BusinessException(
-                    "No puedes desactivar tu propio usuario"
+                    MensajesError.Usuario.AUTODESACTIVACION
             );
         }
 
-        if (Boolean.TRUE.equals(user.getActivo()) == active) {
+        if (Boolean.TRUE.equals(usuario.getActivo()) == active) {
+
             throw new BusinessException(
                     active
-                            ? "El usuario ya se encuentra activo"
-                            : "El usuario ya se encuentra inactivo"
+                            ? MensajesError.Usuario.YA_ACTIVO
+                            : MensajesError.Usuario.YA_INACTIVO
             );
         }
 
-        user.setActivo(active);
+        usuario.setActivo(active);
 
-        Usuario updatedUser = userRepository.save(user);
+        Usuario usuarioActualizado =
+                usuarioRepository.save(usuario);
 
-        return toResponse(updatedUser);
+        return convertirRespuesta(usuarioActualizado);
     }
 
-    private Usuario findEntityById(Long id) {
+    private Usuario buscarEntidad(Long id) {
 
-        return userRepository.findById(id)
+        return usuarioRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "No se encontró el usuario con ID " + id
+                                String.format(
+                                        MensajesError.Usuario.NO_EXISTE,
+                                        id
+                                )
                         )
                 );
     }
 
-    private void validateUpdateRequest(
+    private void validarCreacion(
+            CrearUsuarioRequestDTO request
+    ) {
+
+        String identificacion =
+                request.getIdentificacion().trim();
+
+        String correo =
+                normalizarCorreo(request.getCorreo());
+
+        String username =
+                normalizarUsername(request.getUsername());
+
+        if (usuarioRepository
+                .existsByIdentificacion(identificacion)) {
+
+            throw new BusinessException(
+                    MensajesError.Usuario.IDENTIFICACION_DUPLICADA
+            );
+        }
+
+        if (usuarioRepository.existsByCorreo(correo)) {
+
+            throw new BusinessException(
+                    MensajesError.Usuario.CORREO_DUPLICADO
+            );
+        }
+
+        if (usuarioRepository.existsByUsername(username)) {
+
+            throw new BusinessException(
+                    MensajesError.Usuario.USERNAME_DUPLICADO
+            );
+        }
+    }
+
+    private void validarActualizacion(
             Long id,
             ActualizarUsuarioRequestDTO request
     ) {
@@ -269,36 +268,141 @@ public class UsuarioService implements IUsuarioService {
                 request.getIdentificacion().trim();
 
         String correo =
-                normalizeEmail(request.getCorreo());
+                normalizarCorreo(request.getCorreo());
 
         String username =
-                normalizeUsername(request.getUsername());
+                normalizarUsername(request.getUsername());
 
-        if (userRepository.existsByIdentificacionAndIdNot(
-                identificacion,
-                id
-        )) {
+        if (usuarioRepository
+                .existsByIdentificacionAndIdNot(
+                        identificacion,
+                        id
+                )) {
+
             throw new BusinessException(
-                    "Ya existe otro usuario con esa identificación"
+                    MensajesError.Usuario
+                            .OTRA_IDENTIFICACION_DUPLICADA
             );
         }
 
-        if (userRepository.existsByCorreoAndIdNot(
-                correo,
-                id
-        )) {
+        if (usuarioRepository
+                .existsByCorreoAndIdNot(
+                        correo,
+                        id
+                )) {
+
             throw new BusinessException(
-                    "Ya existe otro usuario con ese correo"
+                    MensajesError.Usuario
+                            .OTRO_CORREO_DUPLICADO
             );
         }
 
-        if (userRepository.existsByUsernameAndIdNot(
-                username,
-                id
-        )) {
+        if (usuarioRepository
+                .existsByUsernameAndIdNot(
+                        username,
+                        id
+                )) {
+
             throw new BusinessException(
-                    "Ya existe otro usuario con ese nombre de usuario"
+                    MensajesError.Usuario
+                            .OTRO_USERNAME_DUPLICADO
             );
         }
+    }
+
+    private Set<Rol> buscarRoles(
+            Set<Long> roleIds
+    ) {
+
+        List<Rol> roles =
+                rolRepository.findAllById(roleIds);
+
+        if (roles.size() != roleIds.size()) {
+
+            Set<Long> rolesEncontrados = roles.stream()
+                    .map(Rol::getId)
+                    .collect(Collectors.toSet());
+
+            Set<Long> rolesFaltantes =
+                    new HashSet<>(roleIds);
+
+            rolesFaltantes.removeAll(
+                    rolesEncontrados
+            );
+
+            throw new BusinessException(
+                    String.format(
+                            MensajesError.Usuario.ROLES_NO_EXISTEN,
+                            rolesFaltantes
+                    )
+            );
+        }
+
+        boolean existenRolesInactivos =
+                roles.stream()
+                        .anyMatch(
+                                rol ->
+                                        !Boolean.TRUE.equals(
+                                                rol.getActivo()
+                                        )
+                        );
+
+        if (existenRolesInactivos) {
+
+            throw new BusinessException(
+                    MensajesError.Usuario.ROLES_INACTIVOS
+            );
+        }
+
+        return new HashSet<>(roles);
+    }
+
+    private UsuarioResponseDTO convertirRespuesta(
+            Usuario usuario
+    ) {
+
+        UsuarioResponseDTO response =
+                modelMapper.map(
+                        usuario,
+                        UsuarioResponseDTO.class
+                );
+
+        Set<RolUsuarioResponseDTO> roles =
+                usuario.getRoles()
+                        .stream()
+                        .map(rol ->
+                                RolUsuarioResponseDTO.builder()
+                                        .id(rol.getId())
+                                        .nombre(
+                                                rol.getNombre().name()
+                                        )
+                                        .descripcion(
+                                                rol.getDescripcion()
+                                        )
+                                        .build()
+                        )
+                        .collect(Collectors.toSet());
+
+        response.setRoles(roles);
+
+        return response;
+    }
+
+    private String normalizarCorreo(
+            String correo
+    ) {
+
+        return correo
+                .trim()
+                .toLowerCase();
+    }
+
+    private String normalizarUsername(
+            String username
+    ) {
+
+        return username
+                .trim()
+                .toLowerCase();
     }
 }

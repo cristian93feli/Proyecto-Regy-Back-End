@@ -6,6 +6,10 @@ import com.regyinventory.dto.response.ApiResponse;
 import com.regyinventory.dto.response.CategoriaResponseDTO;
 import com.regyinventory.dto.response.PageResponseDTO;
 import com.regyinventory.service.contracts.ICategoriaService;
+import com.regyinventory.utils.constants.api.RutasApi;
+import com.regyinventory.utils.constants.mensajes.MensajesExito;
+import com.regyinventory.utils.constants.security.ExpresionesSeguridad;
+import com.regyinventory.utils.constants.swagger.DocumentacionApi;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,22 +21,26 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/categorias")
+@RequestMapping(RutasApi.CATEGORIAS)
 @RequiredArgsConstructor
 @Tag(
-        name = "Categorías",
-        description = "Administración del catálogo de categorías"
+        name = DocumentacionApi.Categoria.TAG,
+        description = DocumentacionApi.Categoria.DESCRIPCION_TAG
 )
-@SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(
+        name = DocumentacionApi.ESQUEMA_SEGURIDAD
+)
 public class CategoriaController {
 
     private final ICategoriaService categoriaService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('PRODUCT_CREATE')")
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_CREAR
+    )
     @Operation(
-            summary = "Crear categoría",
-            description = "Registra una nueva categoría"
+            summary = DocumentacionApi.Categoria.CREAR,
+            description = DocumentacionApi.Categoria.DESCRIPCION_CREAR
     )
     public ResponseEntity<ApiResponse<CategoriaResponseDTO>> crear(
             @Valid @RequestBody CrearCategoriaRequestDTO request
@@ -44,17 +52,19 @@ public class CategoriaController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         ApiResponse.success(
-                                "Categoría creada correctamente",
+                                MensajesExito.Categoria.CREADA,
                                 response
                         )
                 );
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUCT_READ')")
+    @GetMapping(RutasApi.POR_ID)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_CONSULTAR
+    )
     @Operation(
-            summary = "Consultar categoría",
-            description = "Obtiene una categoría por su identificador"
+            summary = DocumentacionApi.Categoria.CONSULTAR,
+            description = DocumentacionApi.Categoria.DESCRIPCION_CONSULTAR
     )
     public ResponseEntity<ApiResponse<CategoriaResponseDTO>> buscarPorId(
             @PathVariable Long id
@@ -65,17 +75,19 @@ public class CategoriaController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Categoría encontrada",
+                        MensajesExito.Categoria.ENCONTRADA,
                         response
                 )
         );
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('PRODUCT_READ')")
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_CONSULTAR
+    )
     @Operation(
-            summary = "Listar categorías",
-            description = "Obtiene las categorías con paginación y ordenamiento"
+            summary = DocumentacionApi.Categoria.LISTAR,
+            description = DocumentacionApi.Categoria.DESCRIPCION_LISTAR
     )
     public ResponseEntity<ApiResponse<PageResponseDTO<CategoriaResponseDTO>>> listar(
             @RequestParam(defaultValue = "0") Integer page,
@@ -94,17 +106,19 @@ public class CategoriaController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Categorías consultadas correctamente",
+                        MensajesExito.Categoria.LISTADAS,
                         response
                 )
         );
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
+    @PutMapping(RutasApi.POR_ID)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_ACTUALIZAR
+    )
     @Operation(
-            summary = "Actualizar categoría",
-            description = "Actualiza el nombre y la descripción de una categoría"
+            summary = DocumentacionApi.Categoria.ACTUALIZAR,
+            description = DocumentacionApi.Categoria.DESCRIPCION_ACTUALIZAR
     )
     public ResponseEntity<ApiResponse<CategoriaResponseDTO>> actualizar(
             @PathVariable Long id,
@@ -116,17 +130,19 @@ public class CategoriaController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Categoría actualizada correctamente",
+                        MensajesExito.Categoria.ACTUALIZADA,
                         response
                 )
         );
     }
 
-    @PatchMapping("/{id}/activar")
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
+    @PatchMapping(RutasApi.ACTIVAR)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_ACTUALIZAR
+    )
     @Operation(
-            summary = "Activar categoría",
-            description = "Activa una categoría previamente inactiva"
+            summary = DocumentacionApi.Categoria.ACTIVAR,
+            description = DocumentacionApi.Categoria.DESCRIPCION_ACTIVAR
     )
     public ResponseEntity<ApiResponse<CategoriaResponseDTO>> activar(
             @PathVariable Long id
@@ -137,17 +153,19 @@ public class CategoriaController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Categoría activada correctamente",
+                        MensajesExito.Categoria.ACTIVADA,
                         response
                 )
         );
     }
 
-    @PatchMapping("/{id}/desactivar")
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
+    @PatchMapping(RutasApi.DESACTIVAR)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_ACTUALIZAR
+    )
     @Operation(
-            summary = "Desactivar categoría",
-            description = "Desactiva una categoría sin eliminarla"
+            summary = DocumentacionApi.Categoria.DESACTIVAR,
+            description = DocumentacionApi.Categoria.DESCRIPCION_DESACTIVAR
     )
     public ResponseEntity<ApiResponse<CategoriaResponseDTO>> desactivar(
             @PathVariable Long id
@@ -158,17 +176,19 @@ public class CategoriaController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Categoría desactivada correctamente",
+                        MensajesExito.Categoria.DESACTIVADA,
                         response
                 )
         );
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUCT_DELETE')")
+    @DeleteMapping(RutasApi.POR_ID)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_ELIMINAR
+    )
     @Operation(
-            summary = "Eliminar categoría",
-            description = "Elimina definitivamente una categoría si no tiene registros asociados"
+            summary = DocumentacionApi.Categoria.ELIMINAR,
+            description = DocumentacionApi.Categoria.DESCRIPCION_ELIMINAR
     )
     public ResponseEntity<ApiResponse<Void>> eliminar(
             @PathVariable Long id
@@ -178,7 +198,7 @@ public class CategoriaController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Categoría eliminada correctamente"
+                        MensajesExito.Categoria.ELIMINADA
                 )
         );
     }

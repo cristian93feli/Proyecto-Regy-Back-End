@@ -1,5 +1,7 @@
 package com.regyinventory.dto.request;
 
+import com.regyinventory.utils.constants.mensajes.MensajesValidacion;
+import com.regyinventory.utils.constants.numeros.Numeros;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -13,30 +15,63 @@ import java.util.Set;
 @Setter
 public class CrearUsuarioRequestDTO {
 
-    @NotBlank(message = "La identificación es obligatoria")
-    @Size(max = 20, message = "La identificación no puede superar 20 caracteres")
+    @NotBlank(
+            message = MensajesValidacion.Usuario.IDENTIFICACION_OBLIGATORIA
+    )
+    @Size(
+            max = Numeros.VEINTE,
+            message = MensajesValidacion.Usuario.IDENTIFICACION_MAXIMA
+    )
     private String identificacion;
 
-    @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 80, message = "El nombre no puede superar 80 caracteres")
+    @NotBlank(
+            message = MensajesValidacion.Usuario.NOMBRE_OBLIGATORIO
+    )
+    @Size(
+            max = Numeros.OCHENTA,
+            message = MensajesValidacion.Usuario.NOMBRE_MAXIMO
+    )
     private String nombre;
 
-    @NotBlank(message = "El apellido es obligatorio")
-    @Size(max = 80, message = "El apellido no puede superar 80 caracteres")
+    @NotBlank(
+            message = MensajesValidacion.Usuario.APELLIDO_OBLIGATORIO
+    )
+    @Size(
+            max = Numeros.OCHENTA,
+            message = MensajesValidacion.Usuario.APELLIDO_MAXIMO
+    )
     private String apellido;
 
-    @NotBlank(message = "El correo es obligatorio")
-    @Email(message = "El correo no tiene un formato válido")
+    @NotBlank(
+            message = MensajesValidacion.Usuario.CORREO_OBLIGATORIO
+    )
+    @Email(
+            message = MensajesValidacion.Usuario.CORREO_INVALIDO
+    )
     private String correo;
 
-    @NotBlank(message = "El nombre de usuario es obligatorio")
-    @Size(min = 4, max = 40, message = "El usuario debe tener entre 4 y 40 caracteres")
+    @NotBlank(
+            message = MensajesValidacion.Usuario.USERNAME_OBLIGATORIO
+    )
+    @Size(
+            min = Numeros.CUATRO,
+            max = Numeros.CUARENTA,
+            message = MensajesValidacion.Usuario.USERNAME_LONGITUD
+    )
     private String username;
 
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, max = 100, message = "La contraseña debe tener mínimo 8 caracteres")
+    @NotBlank(
+            message = MensajesValidacion.Usuario.CONTRASENA_OBLIGATORIA
+    )
+    @Size(
+            min = Numeros.OCHO,
+            max = Numeros.CIEN,
+            message = MensajesValidacion.Usuario.CONTRASENA_LONGITUD
+    )
     private String password;
 
-    @NotEmpty(message = "Debes asignar al menos un rol")
+    @NotEmpty(
+            message = MensajesValidacion.Usuario.ROL_OBLIGATORIO
+    )
     private Set<Long> roleIds;
 }

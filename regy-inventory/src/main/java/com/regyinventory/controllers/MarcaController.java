@@ -6,6 +6,10 @@ import com.regyinventory.dto.response.ApiResponse;
 import com.regyinventory.dto.response.MarcaResponseDTO;
 import com.regyinventory.dto.response.PageResponseDTO;
 import com.regyinventory.service.contracts.IMarcaService;
+import com.regyinventory.utils.constants.api.RutasApi;
+import com.regyinventory.utils.constants.mensajes.MensajesExito;
+import com.regyinventory.utils.constants.security.ExpresionesSeguridad;
+import com.regyinventory.utils.constants.swagger.DocumentacionApi;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,20 +21,27 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/marcas")
+@RequestMapping(RutasApi.MARCAS)
 @RequiredArgsConstructor
 @Tag(
-        name = "Marcas",
-        description = "Administración de marcas"
+        name = DocumentacionApi.Marca.TAG,
+        description = DocumentacionApi.Marca.DESCRIPCION_TAG
 )
-@SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(
+        name = DocumentacionApi.ESQUEMA_SEGURIDAD
+)
 public class MarcaController {
 
     private final IMarcaService marcaService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('PRODUCT_CREATE')")
-    @Operation(summary = "Crear marca")
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_CREAR
+    )
+    @Operation(
+            summary = DocumentacionApi.Marca.CREAR,
+            description = DocumentacionApi.Marca.DESCRIPCION_CREAR
+    )
     public ResponseEntity<ApiResponse<MarcaResponseDTO>> crear(
             @Valid @RequestBody CrearMarcaRequestDTO request
     ) {
@@ -41,122 +52,143 @@ public class MarcaController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         ApiResponse.success(
-                                "Marca creada correctamente",
+                                MensajesExito.Marca.CREADA,
                                 response
                         )
                 );
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUCT_READ')")
-    @Operation(summary = "Consultar marca")
+    @GetMapping(RutasApi.POR_ID)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_CONSULTAR
+    )
+    @Operation(
+            summary = DocumentacionApi.Marca.CONSULTAR,
+            description = DocumentacionApi.Marca.DESCRIPCION_CONSULTAR
+    )
     public ResponseEntity<ApiResponse<MarcaResponseDTO>> buscarPorId(
             @PathVariable Long id
     ) {
 
+        MarcaResponseDTO response =
+                marcaService.buscarPorId(id);
+
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Marca encontrada",
-                        marcaService.buscarPorId(id)
+                        MensajesExito.Marca.ENCONTRADA,
+                        response
                 )
         );
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('PRODUCT_READ')")
-    @Operation(summary = "Listar marcas")
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_CONSULTAR
+    )
+    @Operation(
+            summary = DocumentacionApi.Marca.LISTAR,
+            description = DocumentacionApi.Marca.DESCRIPCION_LISTAR
+    )
     public ResponseEntity<ApiResponse<PageResponseDTO<MarcaResponseDTO>>> listar(
-
-            @RequestParam(defaultValue = "0")
-            Integer page,
-
-            @RequestParam(defaultValue = "10")
-            Integer size,
-
-            @RequestParam(defaultValue = "id")
-            String sortBy,
-
-            @RequestParam(defaultValue = "ASC")
-            String direction
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String direction
     ) {
+
+        PageResponseDTO<MarcaResponseDTO> response =
+                marcaService.listar(
+                        page,
+                        size,
+                        sortBy,
+                        direction
+                );
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Marcas consultadas correctamente",
-                        marcaService.listar(
-                                page,
-                                size,
-                                sortBy,
-                                direction
-                        )
+                        MensajesExito.Marca.LISTADAS,
+                        response
                 )
         );
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
-    @Operation(summary = "Actualizar marca")
+    @PutMapping(RutasApi.POR_ID)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_ACTUALIZAR
+    )
+    @Operation(
+            summary = DocumentacionApi.Marca.ACTUALIZAR,
+            description = DocumentacionApi.Marca.DESCRIPCION_ACTUALIZAR
+    )
     public ResponseEntity<ApiResponse<MarcaResponseDTO>> actualizar(
-
             @PathVariable Long id,
-
-            @Valid
-            @RequestBody
-            ActualizarMarcaRequestDTO request
+            @Valid @RequestBody ActualizarMarcaRequestDTO request
     ) {
+
+        MarcaResponseDTO response =
+                marcaService.actualizar(id, request);
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Marca actualizada correctamente",
-                        marcaService.actualizar(
-                                id,
-                                request
-                        )
+                        MensajesExito.Marca.ACTUALIZADA,
+                        response
                 )
         );
     }
 
-    @PatchMapping("/{id}/activar")
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
-    @Operation(summary = "Activar marca")
+    @PatchMapping(RutasApi.ACTIVAR)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_ACTUALIZAR
+    )
+    @Operation(
+            summary = DocumentacionApi.Marca.ACTIVAR,
+            description = DocumentacionApi.Marca.DESCRIPCION_ACTIVAR
+    )
     public ResponseEntity<ApiResponse<MarcaResponseDTO>> activar(
             @PathVariable Long id
     ) {
 
+        MarcaResponseDTO response =
+                marcaService.cambiarEstado(id, true);
+
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Marca activada correctamente",
-                        marcaService.cambiarEstado(
-                                id,
-                                true
-                        )
+                        MensajesExito.Marca.ACTIVADA,
+                        response
                 )
         );
     }
 
-    @PatchMapping("/{id}/desactivar")
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
-    @Operation(summary = "Desactivar marca")
+    @PatchMapping(RutasApi.DESACTIVAR)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_ACTUALIZAR
+    )
+    @Operation(
+            summary = DocumentacionApi.Marca.DESACTIVAR,
+            description = DocumentacionApi.Marca.DESCRIPCION_DESACTIVAR
+    )
     public ResponseEntity<ApiResponse<MarcaResponseDTO>> desactivar(
             @PathVariable Long id
     ) {
 
+        MarcaResponseDTO response =
+                marcaService.cambiarEstado(id, false);
+
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Marca desactivada correctamente",
-                        marcaService.cambiarEstado(
-                                id,
-                                false
-                        )
+                        MensajesExito.Marca.DESACTIVADA,
+                        response
                 )
         );
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('PRODUCT_DELETE')")
+    @DeleteMapping(RutasApi.POR_ID)
+    @PreAuthorize(
+            ExpresionesSeguridad.PRODUCTO_ELIMINAR
+    )
     @Operation(
-            summary = "Eliminar marca",
-            description = "Elimina definitivamente una marca si no tiene registros asociados"
+            summary = DocumentacionApi.Marca.ELIMINAR,
+            description = DocumentacionApi.Marca.DESCRIPCION_ELIMINAR
     )
     public ResponseEntity<ApiResponse<Void>> eliminar(
             @PathVariable Long id
@@ -166,9 +198,8 @@ public class MarcaController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "Marca eliminada correctamente"
+                        MensajesExito.Marca.ELIMINADA
                 )
         );
     }
-
 }

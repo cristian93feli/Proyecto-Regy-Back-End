@@ -10,6 +10,7 @@ import com.regyinventory.exceptions.ResourceNotFoundException;
 import com.regyinventory.repository.ICategoriaRepository;
 import com.regyinventory.service.contracts.ICategoriaService;
 import com.regyinventory.utils.PageableUtil;
+import com.regyinventory.utils.constants.mensajes.MensajesError;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,7 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CategoriaService implements ICategoriaService {
+public class CategoriaService
+        implements ICategoriaService {
 
     private final ICategoriaRepository categoriaRepository;
     private final ModelMapper modelMapper;
@@ -32,31 +34,40 @@ public class CategoriaService implements ICategoriaService {
             CrearCategoriaRequestDTO request
     ) {
 
-        String nombre = request.getNombre().trim();
+        String nombre =
+                request.getNombre().trim();
 
-        if (categoriaRepository.existsByNombreIgnoreCase(nombre)) {
-            throw new BusinessException(
-                    "Ya existe una categoría con ese nombre"
-            );
-        }
+        validarNombreCreacion(nombre);
 
         Categoria categoria =
-                modelMapper.map(request, Categoria.class);
+                modelMapper.map(
+                        request,
+                        Categoria.class
+                );
 
         categoria.setNombre(nombre);
         categoria.setDescripcion(
-                normalizarDescripcion(request.getDescripcion())
+                normalizarDescripcion(
+                        request.getDescripcion()
+                )
         );
 
-        Categoria guardada =
+        Categoria categoriaGuardada =
                 categoriaRepository.save(categoria);
 
-        return convertir(guardada);
+        return convertirRespuesta(
+                categoriaGuardada
+        );
     }
 
     @Override
-    public CategoriaResponseDTO buscarPorId(Long id) {
-        return convertir(buscarEntidad(id));
+    public CategoriaResponseDTO buscarPorId(
+            Long id
+    ) {
+
+        return convertirRespuesta(
+                buscarEntidad(id)
+        );
     }
 
     @Override
@@ -79,7 +90,7 @@ public class CategoriaService implements ICategoriaService {
 
         return PageResponseDTO.fromPage(
                 resultado,
-                this::convertir
+                this::convertirRespuesta
         );
     }
 
@@ -90,26 +101,30 @@ public class CategoriaService implements ICategoriaService {
             ActualizarCategoriaRequestDTO request
     ) {
 
-        Categoria categoria = buscarEntidad(id);
-        String nombre = request.getNombre().trim();
+        Categoria categoria =
+                buscarEntidad(id);
 
-        if (categoriaRepository
-                .existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
+        String nombre =
+                request.getNombre().trim();
 
-            throw new BusinessException(
-                    "Ya existe otra categoría con ese nombre"
-            );
-        }
+        validarNombreActualizacion(
+                id,
+                nombre
+        );
 
         categoria.setNombre(nombre);
         categoria.setDescripcion(
-                normalizarDescripcion(request.getDescripcion())
+                normalizarDescripcion(
+                        request.getDescripcion()
+                )
         );
 
-        Categoria actualizada =
+        Categoria categoriaActualizada =
                 categoriaRepository.save(categoria);
 
-        return convertir(actualizada);
+        return convertirRespuesta(
+                categoriaActualizada
+        );
     }
 
     @Override
@@ -119,36 +134,46 @@ public class CategoriaService implements ICategoriaService {
             boolean activo
     ) {
 
-        Categoria categoria = buscarEntidad(id);
+        Categoria categoria =
+                buscarEntidad(id);
 
-        if (Boolean.TRUE.equals(categoria.getActivo()) == activo) {
+        if (Boolean.TRUE.equals(
+                categoria.getActivo()
+        ) == activo) {
+
             throw new BusinessException(
                     activo
-                            ? "La categoría ya se encuentra activa"
-                            : "La categoría ya se encuentra inactiva"
+                            ? MensajesError.Categoria.YA_ACTIVA
+                            : MensajesError.Categoria.YA_INACTIVA
             );
         }
 
         categoria.setActivo(activo);
 
-        Categoria actualizada =
+        Categoria categoriaActualizada =
                 categoriaRepository.save(categoria);
 
-        return convertir(actualizada);
+        return convertirRespuesta(
+                categoriaActualizada
+        );
     }
 
     @Override
     @Transactional
     public void eliminar(Long id) {
 
-        Categoria categoria = buscarEntidad(id);
+        Categoria categoria =
+                buscarEntidad(id);
 
         try {
             categoriaRepository.delete(categoria);
             categoriaRepository.flush();
+
         } catch (DataIntegrityViolationException exception) {
+
             throw new BusinessException(
-                    "No se puede eliminar la categoría porque tiene registros asociados"
+                    MensajesError.Categoria
+                            .TIENE_REGISTROS_ASOCIADOS
             );
         }
     }
@@ -158,14 +183,50 @@ public class CategoriaService implements ICategoriaService {
         return categoriaRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "No existe la categoría con id " + id
+                                String.format(
+                                        MensajesError.Categoria.NO_EXISTE,
+                                        id
+                                )
                         )
                 );
     }
 
-    private CategoriaResponseDTO convertir(
+    private void validarNombreCreacion(
+            String nombre
+    ) {
+
+        if (categoriaRepository
+                .existsByNombreIgnoreCase(nombre)) {
+
+            throw new BusinessException(
+                    MensajesError.Categoria
+                            .NOMBRE_DUPLICADO
+            );
+        }
+    }
+
+    private void validarNombreActualizacion(
+            Long id,
+            String nombre
+    ) {
+
+        if (categoriaRepository
+                .existsByNombreIgnoreCaseAndIdNot(
+                        nombre,
+                        id
+                )) {
+
+            throw new BusinessException(
+                    MensajesError.Categoria
+                            .OTRO_NOMBRE_DUPLICADO
+            );
+        }
+    }
+
+    private CategoriaResponseDTO convertirRespuesta(
             Categoria categoria
     ) {
+
         return modelMapper.map(
                 categoria,
                 CategoriaResponseDTO.class
@@ -175,7 +236,10 @@ public class CategoriaService implements ICategoriaService {
     private String normalizarDescripcion(
             String descripcion
     ) {
-        if (descripcion == null || descripcion.isBlank()) {
+
+        if (descripcion == null
+                || descripcion.isBlank()) {
+
             return null;
         }
 

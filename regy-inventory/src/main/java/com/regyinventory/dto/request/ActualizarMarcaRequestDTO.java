@@ -1,5 +1,7 @@
 package com.regyinventory.dto.request;
 
+import com.regyinventory.utils.constants.mensajes.MensajesValidacion;
+import com.regyinventory.utils.constants.numeros.Numeros;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -9,16 +11,18 @@ import lombok.Setter;
 @Setter
 public class ActualizarMarcaRequestDTO {
 
-    @NotBlank(message = "El nombre de la marca es obligatorio")
+    @NotBlank(
+            message = MensajesValidacion.Marca.NOMBRE_OBLIGATORIO
+    )
     @Size(
-            max = 100,
-            message = "El nombre no puede superar 100 caracteres"
+            max = Numeros.CIEN,
+            message = MensajesValidacion.Marca.NOMBRE_MAXIMO
     )
     private String nombre;
 
     @Size(
-            max = 250,
-            message = "La descripción no puede superar 250 caracteres"
+            max = Numeros.DOSCIENTOS_CINCUENTA,
+            message = MensajesValidacion.Comun.DESCRIPCION_MAXIMA
     )
     private String descripcion;
 }

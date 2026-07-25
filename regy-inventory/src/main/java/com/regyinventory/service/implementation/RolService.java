@@ -5,6 +5,7 @@ import com.regyinventory.entities.Rol;
 import com.regyinventory.exceptions.ResourceNotFoundException;
 import com.regyinventory.repository.IRolRepository;
 import com.regyinventory.service.contracts.IRolService;
+import com.regyinventory.utils.constants.mensajes.MensajesError;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,46 +18,62 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class RolService implements IRolService {
 
-    private final IRolRepository roleRepository;
+    private final IRolRepository rolRepository;
 
     @Override
-    public List<RolResponseDTO> findAll(boolean activeOnly) {
+    public List<RolResponseDTO> findAll(
+            boolean activeOnly
+    ) {
 
-        return roleRepository.findAll()
+        return rolRepository.findAll()
                 .stream()
-                .filter(role ->
+                .filter(rol ->
                         !activeOnly
-                                || Boolean.TRUE.equals(role.getActivo())
+                                || Boolean.TRUE.equals(
+                                rol.getActivo()
+                        )
                 )
                 .sorted(
                         Comparator.comparing(
-                                role -> role.getNombre().name()
+                                rol ->
+                                        rol.getNombre().name()
                         )
                 )
-                .map(this::toResponse)
+                .map(this::convertirRespuesta)
                 .toList();
     }
 
     @Override
     public RolResponseDTO findById(Long id) {
 
-        Rol rol = roleRepository.findById(id)
+        Rol rol = rolRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "No se encontró el rol con ID " + id
+                                String.format(
+                                        MensajesError.Rol.NO_EXISTE,
+                                        id
+                                )
                         )
                 );
 
-        return toResponse(rol);
+        return convertirRespuesta(rol);
     }
 
-    private RolResponseDTO toResponse(Rol rol) {
+    private RolResponseDTO convertirRespuesta(
+            Rol rol
+    ) {
 
         return RolResponseDTO.builder()
                 .id(rol.getId())
-                .nombre(rol.getNombre().name())
-                .descripcion(rol.getDescripcion())
-                .activo(rol.getActivo())
+                .nombre(
+                        rol.getNombre().name()
+                )
+                .descripcion(
+                        rol.getDescripcion()
+                )
+                .activo(
+                        rol.getActivo()
+                )
                 .build();
     }
 }
