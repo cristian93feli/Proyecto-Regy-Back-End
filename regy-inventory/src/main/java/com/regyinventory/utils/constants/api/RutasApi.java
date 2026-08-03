@@ -37,4 +37,25 @@ public final class RutasApi {
 
     public static final String CAMBIAR_CONTRASENA =
             "/{id}/password";
+
+    public static final String UBICACIONES = "/api/ubicaciones";
+    public static final String INVENTARIO = "/api/inventario";
+    public static final String SOLICITUDES_REPOSICION = "/api/solicitudes";
+    public static final String AUDITORIAS = "/api/auditorias";
+    public static final String CONFIGURACION = "/api/configuracion";
+    public static final String DASHBOARD = "/api/dashboard";
+    public static final String LOGS = "/api/logs";
+    public static final String INGRESOS = "/ingresos";
+    public static final String MOVIMIENTOS = "/movimientos";
+    public static final String EXISTENCIAS = "/existencias";
+    public static final String STOCK_BAJO = "/stock-bajo";
+    public static final String UBICACION_POR_ID = "/{ubicacionId}";
+    public static final String UBICACION_ACTIVAR = "/{ubicacionId}/activar";
+    public static final String UBICACION_DESACTIVAR = "/{ubicacionId}/desactivar";
+    public static final String POR_TIPO = "/tipo/{tipoUbicacion}";
+    public static final String UBICACIONES_HIJAS = "/{ubicacionPadreId}/hijas";
+    public static final String COMPLETAR = "/{id}/completar";
+    public static final String CANCELAR = "/{id}/cancelar";
+    public static final String POR_CLAVE = "/{clave}";
+
 }

@@ -106,4 +106,100 @@ public final class MensajesExito {
         private Categoria() {
         }
     }
+
+    public static final class Producto {
+
+        public static final String CREADO =
+                "Producto creado correctamente";
+
+        public static final String ENCONTRADO =
+                "Producto encontrado";
+
+        public static final String LISTADOS =
+                "Productos consultados correctamente";
+
+        public static final String ACTUALIZADO =
+                "Producto actualizado correctamente";
+
+        public static final String ACTIVADO =
+                "Producto activado correctamente";
+
+        public static final String DESACTIVADO =
+                "Producto desactivado correctamente";
+
+        public static final String ELIMINADO =
+                "Producto eliminado correctamente";
+
+        public static final String NOMBRE_ENTIDAD =
+                "Producto";
+
+        public static final String LOG_CREADO =
+                "Producto creado: %s";
+
+        public static final String LOG_ACTUALIZADO =
+                "Producto actualizado";
+
+        public static final String LOG_ACTIVADO =
+                "Producto activado";
+
+        public static final String LOG_DESACTIVADO =
+                "Producto desactivado";
+
+        public static final String LOG_ELIMINADO =
+                "Producto eliminado";
+
+        private Producto() {
+        }
+    }
+
+    public static final class Ubicacion {
+        public static final String CREADA = "Ubicación creada correctamente";
+        public static final String ENCONTRADA = "Ubicación consultada correctamente";
+        public static final String LISTADAS = "Ubicaciones consultadas correctamente";
+        public static final String HIJAS_LISTADAS = "Ubicaciones hijas consultadas correctamente";
+        public static final String ACTUALIZADA = "Ubicación actualizada correctamente";
+        public static final String ACTIVADA = "Ubicación activada correctamente";
+        public static final String DESACTIVADA = "Ubicación desactivada correctamente";
+        public static final String ELIMINADA = "Ubicación eliminada correctamente";
+        private Ubicacion() { }
+    }
+
+    public static final class Inventario {
+        public static final String INGRESADO = "Stock ingresado correctamente";
+        public static final String MOVIDO = "Stock movido correctamente";
+        public static final String EXISTENCIAS = "Existencias consultadas correctamente";
+        public static final String STOCK_BAJO = "Stock bajo consultado correctamente";
+        private Inventario() { }
+    }
+
+    public static final class SolicitudReposicion {
+        public static final String CREADA = "Solicitud creada correctamente";
+        public static final String LISTADAS = "Solicitudes consultadas correctamente";
+        public static final String COMPLETADA = "Solicitud completada correctamente";
+        public static final String CANCELADA = "Solicitud cancelada correctamente";
+        private SolicitudReposicion() { }
+    }
+
+    public static final class Auditoria {
+        public static final String REGISTRADA = "Auditoría registrada correctamente";
+        public static final String LISTADAS = "Auditorías consultadas correctamente";
+        private Auditoria() { }
+    }
+
+    public static final class Configuracion {
+        public static final String LISTADA = "Configuración consultada correctamente";
+        public static final String ACTUALIZADA = "Configuración actualizada correctamente";
+        private Configuracion() { }
+    }
+
+    public static final class Dashboard {
+        public static final String CONSULTADO = "Dashboard consultado correctamente";
+        private Dashboard() { }
+    }
+
+    public static final class Log {
+        public static final String LISTADOS = "Logs consultados correctamente";
+        private Log() { }
+    }
+
 }

@@ -121,4 +121,129 @@ public final class MensajesError {
         private Categoria() {
         }
     }
+
+    public static final class Producto {
+
+        public static final String NO_EXISTE =
+                "No existe el producto con id %d";
+
+        public static final String NUMERO_DUPLICADO =
+                "Ya existe un producto con ese número";
+
+        public static final String SKU_DUPLICADO =
+                "Ya existe un producto con ese SKU";
+
+        public static final String CODIGO_BARRAS_DUPLICADO =
+                "Ya existe un producto con ese código de barras";
+
+        public static final String MARCA_INACTIVA =
+                "La marca seleccionada está inactiva";
+
+        public static final String CATEGORIA_INACTIVA =
+                "La categoría seleccionada está inactiva";
+
+        public static final String TIENE_STOCK =
+                "No se puede eliminar un producto con stock";
+
+        public static final String TIENE_SOLICITUDES_PENDIENTES =
+                "No se puede eliminar un producto con solicitudes pendientes";
+
+        private Producto() {
+        }
+    }
+    public static final class Ubicacion {
+
+        public static final String NO_ENCONTRADA = "Ubicación no encontrada";
+        public static final String CODIGO_DUPLICADO = "Ya existe una ubicación con el código indicado";
+        public static final String INACTIVA = "La ubicación está inactiva";
+        public static final String CON_HIJAS_NO_DESACTIVABLE =
+                "No se puede desactivar una ubicación que tiene ubicaciones hijas";
+        public static final String CON_STOCK_NO_DESACTIVABLE =
+                "No se puede desactivar una ubicación que contiene stock";
+        public static final String CON_HIJAS_NO_ELIMINABLE =
+                "No se puede eliminar una ubicación que tiene ubicaciones hijas";
+        public static final String CON_STOCK_NO_ELIMINABLE =
+                "No se puede eliminar una ubicación que contiene stock";
+        public static final String RAIZ_CON_PADRE =
+                "Los depósitos y zonas de empaque no pueden tener ubicación padre";
+        public static final String HIJA_SIN_PADRE =
+                "El estante o la caja deben tener una ubicación padre";
+        public static final String ESTANTE_PADRE_INVALIDO =
+                "Un estante únicamente puede pertenecer a un depósito";
+        public static final String CAJA_PADRE_INVALIDO =
+                "Una caja únicamente puede pertenecer a un estante";
+        public static final String USUARIO_SOLO_ZONA =
+                "Solo una zona de empaque puede tener un usuario asignado";
+        public static final String USUARIO_ASIGNADO_NO_ENCONTRADO =
+                "Usuario asignado no encontrado";
+        public static final String USUARIO_ASIGNADO_INACTIVO =
+                "El usuario asignado está inactivo";
+        public static final String JERARQUIA_INACTIVA =
+                "La ubicación pertenece a una jerarquía inactiva";
+        public static final String NO_ADMITE_INVENTARIO =
+                "El inventario únicamente puede existir en cajas o zonas de empaque";
+        public static final String INGRESO_REQUIERE_CAJA =
+                "Los ingresos de mercancía deben registrarse en una caja o en una zona de empaque";
+
+        private Ubicacion() {
+        }
+    }
+
+    public static final class Inventario {
+
+        public static final String ORIGEN_DESTINO_IGUALES =
+                "El origen y el destino no pueden ser iguales";
+        public static final String STOCK_INSUFICIENTE =
+                "Stock insuficiente. Disponible: %d";
+        public static final String PRODUCTO_NO_ENCONTRADO =
+                "Producto no encontrado";
+        public static final String PRODUCTO_INACTIVO =
+                "El producto está inactivo";
+
+        private Inventario() {
+        }
+    }
+
+    public static final class SolicitudReposicion {
+
+        public static final String NO_ENCONTRADA = "Solicitud no encontrada";
+        public static final String NO_PENDIENTE = "La solicitud no está pendiente";
+        public static final String STOCK_INSUFICIENTE_DEPOSITOS =
+                "Stock insuficiente en las cajas de los depósitos";
+        public static final String ZONA_NO_ENCONTRADA = "Zona de empaque no encontrada";
+        public static final String DESTINO_INVALIDO =
+                "La ubicación destino debe ser una zona de empaque activa";
+
+        private SolicitudReposicion() {
+        }
+    }
+
+    public static final class Auditoria {
+
+        public static final String MOTIVO_OTRO_REQUERIDO =
+                "Debe especificar el motivo cuando selecciona OTRO";
+        public static final String TIPO_UBICACION_INCOMPATIBLE =
+                "El tipo de auditoría no coincide con el tipo de ubicación";
+
+        private Auditoria() {
+        }
+    }
+
+    public static final class Configuracion {
+
+        public static final String NO_ENCONTRADA = "Configuración no encontrada";
+
+        private Configuracion() {
+        }
+    }
+
+    public static final class Operacion {
+
+        public static final String USUARIO_AUTENTICADO_NO_ENCONTRADO =
+                "Usuario autenticado no encontrado";
+
+        private Operacion() {
+        }
+    }
+
 }
