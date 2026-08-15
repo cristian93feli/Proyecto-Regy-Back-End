@@ -22,5 +22,5 @@ public class ActualizarUbicacionRequestDTO {
     @Size(max = 250, message = "La descripción no puede superar 250 caracteres")
     private String descripcion;
 
-    private Long usuarioAsignadoId;
+    private java.util.Set<Long> usuariosResponsablesIds;
 }

@@ -78,6 +78,9 @@ public final class DocumentacionApi {
         public static final String DESCRIPCION_DESACTIVAR =
                 "Inhabilita el acceso de un usuario";
 
+        public static final String ELIMINAR = "Eliminar usuario";
+        public static final String DESCRIPCION_ELIMINAR = "Elimina un usuario únicamente cuando no rompe responsabilidades de zona ni integridad histórica.";
+
         private Usuario() {
         }
     }
@@ -283,6 +286,11 @@ public final class DocumentacionApi {
         public static final String STOCK_TOTAL = "Stock calculado a partir de los lotes existentes";
         public static final String ACTIVO = "Indica si el producto está habilitado";
 
+        public static final String BUSCAR = "Buscar productos";
+        public static final String DESCRIPCION_BUSCAR = "Busca productos activos por número, nombre o código de barras respetando el alcance del usuario autenticado.";
+        public static final String IMPORTAR = "Importar productos desde Excel";
+        public static final String DESCRIPCION_IMPORTAR = "Procesa el archivo Excel de productos y crea previamente marcas y categorías que no existan.";
+
         private Producto() {
         }
     }
@@ -326,6 +334,14 @@ public final class DocumentacionApi {
         public static final String DESCRIPCION_MOVER = "Transfiere stock entre cajas o zonas de empaque aplicando FEFO y FIFO.";
         public static final String EXISTENCIAS = "Consultar existencias";
         public static final String STOCK_BAJO = "Consultar productos con stock bajo";
+        public static final String VENTA = "Registrar salida por venta";
+        public static final String DESCRIPCION_VENTA = "Descuenta inventario aplicando FEFO/FIFO sin crear una entidad comercial de venta";
+        public static final String DESCRIPCION_VENTA_REQUEST = "Salida de inventario por venta, sin registrar una entidad comercial de venta";
+        public static final String ORIGENES = "Consultar orígenes con stock del producto";
+        public static final String PRODUCTOS_DISPONIBLES = "Consultar productos con stock disponible para venta";
+        public static final String AJUSTAR = "Ajustar inventario";
+        public static final String DESCRIPCION_AJUSTAR = "Permite al administrador establecer una nueva cantidad y registra la diferencia como ajuste positivo o negativo.";
+        public static final String DESCRIPCION_AJUSTAR_REQUEST = "Ajuste administrativo de la cantidad de un producto en una ubicación";
         private Inventario() { }
     }
 
@@ -336,6 +352,7 @@ public final class DocumentacionApi {
         public static final String LISTAR = "Listar solicitudes de reposición";
         public static final String COMPLETAR = "Completar solicitud de reposición";
         public static final String CANCELAR = "Cancelar solicitud de reposición";
+        public static final String SUGERENCIAS = "Consultar cajas sugeridas por FEFO/FIFO";
         private SolicitudReposicion() { }
     }
 

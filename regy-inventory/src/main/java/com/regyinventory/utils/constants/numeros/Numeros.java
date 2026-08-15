@@ -11,6 +11,7 @@ public final class Numeros {
     public static final int TRES = 3;
     public static final int CUATRO = 4;
     public static final int CINCO = 5;
+    public static final int SEIS = 6;
 
     public static final int OCHO = 8;
     public static final int DIEZ = 10;
@@ -22,4 +23,5 @@ public final class Numeros {
     public static final int CIEN = 100;
     public static final int CIENTO_CINCUENTA = 150;
     public static final int DOSCIENTOS_CINCUENTA = 250;
+    public static final int QUINIENTOS = 500;
 }

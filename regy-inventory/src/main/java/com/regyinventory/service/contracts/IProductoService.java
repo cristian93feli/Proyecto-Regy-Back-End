@@ -1,9 +1,13 @@
 package com.regyinventory.service.contracts;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
+
 import com.regyinventory.dto.request.ActualizarProductoRequestDTO;
 import com.regyinventory.dto.request.CrearProductoRequestDTO;
 import com.regyinventory.dto.response.PageResponseDTO;
 import com.regyinventory.dto.response.ProductoResponseDTO;
+import com.regyinventory.dto.response.ImportacionProductosResponseDTO;
 
 /**
  * Define las operaciones del catálogo maestro de productos.
@@ -76,4 +80,11 @@ public interface IProductoService {
      * @param id identificador del producto
      */
     void eliminar(Long id);
+
+    /** Busca productos activos por nombre, número o código de barras respetando el alcance del usuario. */
+    List<ProductoResponseDTO> buscar(String termino);
+
+    /** Procesa un Excel de productos, creando marcas y categorías inexistentes antes del producto. */
+    ImportacionProductosResponseDTO importar(MultipartFile archivo);
 }
+

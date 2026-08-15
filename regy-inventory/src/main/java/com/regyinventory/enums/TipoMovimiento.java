@@ -4,4 +4,5 @@ public enum TipoMovimiento {
     TRASLADO,
     REPOSICION,
     AJUSTE_POSITIVO,
-    AJUSTE_NEGATIVO }
+    AJUSTE_NEGATIVO,
+    SALIDA_VENTA }

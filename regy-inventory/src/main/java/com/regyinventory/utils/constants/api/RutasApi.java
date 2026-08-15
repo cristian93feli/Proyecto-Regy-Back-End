@@ -47,6 +47,9 @@ public final class RutasApi {
     public static final String LOGS = "/api/logs";
     public static final String INGRESOS = "/ingresos";
     public static final String MOVIMIENTOS = "/movimientos";
+    public static final String VENTAS = "/salidas/venta";
+    public static final String AJUSTAR_INVENTARIO = "/ajustes";
+    public static final String ORIGENES_PRODUCTO = "/productos/{productoId}/origenes";
     public static final String EXISTENCIAS = "/existencias";
     public static final String STOCK_BAJO = "/stock-bajo";
     public static final String UBICACION_POR_ID = "/{ubicacionId}";
@@ -57,5 +60,9 @@ public final class RutasApi {
     public static final String COMPLETAR = "/{id}/completar";
     public static final String CANCELAR = "/{id}/cancelar";
     public static final String POR_CLAVE = "/{clave}";
+    public static final String PRODUCTOS_DISPONIBLES = "/productos-disponibles";
+    public static final String BUSCAR_PRODUCTOS = "/buscar";
+    public static final String IMPORTAR_PRODUCTOS = "/importar";
+    public static final String SUGERENCIAS_SOLICITUD = "/{id}/sugerencias";
 
 }

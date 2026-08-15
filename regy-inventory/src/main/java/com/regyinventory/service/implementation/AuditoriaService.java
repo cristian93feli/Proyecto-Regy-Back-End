@@ -23,6 +23,7 @@ import com.regyinventory.service.contracts.IAuditoriaService;
 import com.regyinventory.utils.constants.api.ValoresApi;
 import com.regyinventory.utils.constants.log.ConstantesLog;
 import com.regyinventory.utils.constants.mensajes.MensajesError;
+import com.regyinventory.utils.constants.numeros.Numeros;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -51,6 +52,7 @@ public class AuditoriaService implements IAuditoriaService {
         validarMotivo(solicitudAuditoria);
         Ubicacion ubicacionAuditada = inventarioService.obtenerUbicacionActivaQueAdmiteInventario(solicitudAuditoria.getDestinoId());
         validarTipoAuditoria(solicitudAuditoria.getTipoAuditoria(), ubicacionAuditada);
+        operacionSupport.validarUbicacionPermitidaParaEmpaquetador(ubicacionAuditada.getId());
 
         AuditoriaInventario auditoria = AuditoriaInventario.builder()
                 .tipoAuditoria(solicitudAuditoria.getTipoAuditoria())
@@ -90,12 +92,19 @@ public class AuditoriaService implements IAuditoriaService {
 
     @Override
     public PageResponseDTO<AuditoriaResponseDTO> listar(Integer numeroPagina, Integer tamanoPagina) {
+        var pageable = PageRequest.of(
+                numeroPagina,
+                tamanoPagina,
+                Sort.by(Sort.Direction.DESC, ValoresApi.CAMPO_FECHA_CREACION)
+        );
+        var auditorias = operacionSupport.usuarioAutenticadoEsEmpaquetador()
+                ? auditoriaInventarioRepository.findByDestinoIdIn(
+                        operacionSupport.obtenerZonasAsignadasIds(),
+                        pageable
+                )
+                : auditoriaInventarioRepository.findAll(pageable);
         return PageResponseDTO.fromPage(
-                auditoriaInventarioRepository.findAll(PageRequest.of(
-                        numeroPagina,
-                        tamanoPagina,
-                        Sort.by(Sort.Direction.DESC, ValoresApi.CAMPO_FECHA_CREACION)
-                )),
+                auditorias,
                 auditoria -> convertirRespuesta(auditoria, null)
         );
     }
@@ -117,7 +126,7 @@ public class AuditoriaService implements IAuditoriaService {
     }
 
     private void aplicarDiferencia(Producto producto, Ubicacion ubicacion, int diferencia) {
-        if (diferencia > 0) {
+        if (diferencia > Numeros.CERO) {
             loteInventarioRepository.save(LoteInventario.builder()
                     .producto(producto)
                     .ubicacion(ubicacion)
@@ -126,7 +135,7 @@ public class AuditoriaService implements IAuditoriaService {
                     .build());
             return;
         }
-        if (diferencia >= 0) {
+        if (diferencia >= Numeros.CERO) {
             return;
         }
 
@@ -146,7 +155,7 @@ public class AuditoriaService implements IAuditoriaService {
             loteDisponible.setCantidad(loteDisponible.getCantidad() - cantidadDescontada);
             loteInventarioRepository.save(loteDisponible);
             cantidadPendiente -= cantidadDescontada;
-            if (cantidadPendiente == 0) {
+            if (cantidadPendiente == Numeros.CERO) {
                 break;
             }
         }

@@ -29,6 +29,9 @@ public class SolicitudReposicion extends BaseEntity {
     private Producto producto;
     @Column(nullable = false)
     private Integer cantidad;
+
+    @Column(name = "cantidad_pendiente")
+    private Integer cantidadPendiente;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private PrioridadSolicitud prioridad;

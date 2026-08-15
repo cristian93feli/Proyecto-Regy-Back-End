@@ -8,6 +8,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
+import java.util.HashSet;
+import java.util.Set;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -48,7 +52,8 @@ public class Ubicacion extends BaseEntity {
     @JoinColumn(name = "ubicacion_padre_id")
     private Ubicacion ubicacionPadre;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_asignado_id")
-    private Usuario usuarioAsignado;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "ubicaciones_responsables", joinColumns = @JoinColumn(name = "ubicacion_id"), inverseJoinColumns = @JoinColumn(name = "usuario_id"))
+    @Builder.Default
+    private Set<Usuario> usuariosResponsables = new HashSet<>();
 }

@@ -1,11 +1,15 @@
 package com.regyinventory.controllers;
 
+import com.regyinventory.dto.request.ActualizarInventarioRequestDTO;
 import com.regyinventory.dto.request.IngresoStockRequestDTO;
 import com.regyinventory.dto.request.MoverStockRequestDTO;
+import com.regyinventory.dto.request.VentaProductoRequestDTO;
+import com.regyinventory.dto.response.UbicacionResponseDTO;
 import com.regyinventory.dto.response.ApiResponse;
 import com.regyinventory.dto.response.IngresoStockResponseDTO;
 import com.regyinventory.dto.response.InventarioResponseDTO;
 import com.regyinventory.dto.response.MovimientoResponseDTO;
+import com.regyinventory.dto.response.ProductoStockDisponibleDTO;
 import com.regyinventory.service.contracts.IInventarioService;
 import com.regyinventory.utils.constants.api.RutasApi;
 import com.regyinventory.utils.constants.mensajes.MensajesExito;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping(RutasApi.INVENTARIO)
@@ -56,6 +61,42 @@ public class InventarioController {
                 MensajesExito.Inventario.MOVIDO,
                 inventarioService.mover(solicitudMovimiento)
         );
+    }
+
+    @PostMapping(RutasApi.VENTAS)
+    @PreAuthorize(ExpresionesSeguridad.STOCK_VENDER)
+    @Operation(summary = DocumentacionApi.Inventario.VENTA, description = DocumentacionApi.Inventario.DESCRIPCION_VENTA)
+    public ApiResponse<MovimientoResponseDTO> vender(@Valid @RequestBody VentaProductoRequestDTO solicitudVenta) {
+        return ApiResponse.success(MensajesExito.Inventario.VENTA_REGISTRADA, inventarioService.vender(solicitudVenta));
+    }
+
+    @PostMapping(RutasApi.AJUSTAR_INVENTARIO)
+    @PreAuthorize(ExpresionesSeguridad.ROL_ADMIN)
+    @Operation(summary = DocumentacionApi.Inventario.AJUSTAR, description = DocumentacionApi.Inventario.DESCRIPCION_AJUSTAR)
+    public ApiResponse<MovimientoResponseDTO> ajustar(
+            @Valid @RequestBody ActualizarInventarioRequestDTO solicitudAjuste
+    ) {
+        return ApiResponse.success(
+                MensajesExito.Inventario.AJUSTADO,
+                inventarioService.ajustar(solicitudAjuste)
+        );
+    }
+
+    @GetMapping(RutasApi.PRODUCTOS_DISPONIBLES)
+    @PreAuthorize(ExpresionesSeguridad.STOCK_CONSULTAR)
+    @Operation(summary = DocumentacionApi.Inventario.PRODUCTOS_DISPONIBLES)
+    public ApiResponse<List<ProductoStockDisponibleDTO>> consultarProductosDisponibles() {
+        return ApiResponse.success(
+                MensajesExito.Inventario.PRODUCTOS_DISPONIBLES,
+                inventarioService.productosDisponiblesParaVenta()
+        );
+    }
+
+    @GetMapping(RutasApi.ORIGENES_PRODUCTO)
+    @PreAuthorize(ExpresionesSeguridad.STOCK_CONSULTAR)
+    @Operation(summary = DocumentacionApi.Inventario.ORIGENES)
+    public ApiResponse<List<UbicacionResponseDTO>> consultarOrigenes(@PathVariable Long productoId) {
+        return ApiResponse.success(MensajesExito.Inventario.ORIGENES_LISTADOS, inventarioService.origenesDisponibles(productoId));
     }
 
     @GetMapping(RutasApi.EXISTENCIAS)

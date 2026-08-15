@@ -5,6 +5,8 @@ import com.regyinventory.dto.request.CrearSolicitudRequestDTO;
 import com.regyinventory.dto.response.ApiResponse;
 import com.regyinventory.dto.response.PageResponseDTO;
 import com.regyinventory.dto.response.SolicitudResponseDTO;
+import com.regyinventory.dto.response.SugerenciaReposicionDTO;
+import java.util.List;
 import com.regyinventory.enums.EstadoSolicitud;
 import com.regyinventory.service.contracts.ISolicitudReposicionService;
 import com.regyinventory.utils.constants.api.RutasApi;
@@ -63,17 +65,28 @@ public class SolicitudReposicionController {
         );
     }
 
+    @GetMapping(RutasApi.SUGERENCIAS_SOLICITUD)
+    @PreAuthorize(ExpresionesSeguridad.SOLICITUD_CONSULTAR)
+    @Operation(summary = DocumentacionApi.SolicitudReposicion.SUGERENCIAS)
+    public ApiResponse<List<SugerenciaReposicionDTO>> sugerencias(@PathVariable Long id) {
+        return ApiResponse.success(
+                MensajesExito.SolicitudReposicion.SUGERENCIAS,
+                solicitudReposicionService.sugerencias(id)
+        );
+    }
+
     @PostMapping(RutasApi.COMPLETAR)
     @PreAuthorize(ExpresionesSeguridad.SOLICITUD_COMPLETAR)
     @Operation(summary = DocumentacionApi.SolicitudReposicion.COMPLETAR)
     public ApiResponse<SolicitudResponseDTO> completar(
             @PathVariable Long id,
-            @RequestBody(required = false) CompletarSolicitudRequestDTO solicitudCompletado
+            @Valid @RequestBody(required = false) CompletarSolicitudRequestDTO solicitudCompletado
     ) {
-        return ApiResponse.success(
-                MensajesExito.SolicitudReposicion.COMPLETADA,
-                solicitudReposicionService.completar(id, solicitudCompletado)
-        );
+        SolicitudResponseDTO solicitudProcesada = solicitudReposicionService.completar(id, solicitudCompletado);
+        String mensaje = solicitudProcesada.getEstado() == EstadoSolicitud.COMPLETADA
+                ? MensajesExito.SolicitudReposicion.COMPLETADA
+                : MensajesExito.SolicitudReposicion.COMPLETADA_PARCIAL;
+        return ApiResponse.success(mensaje, solicitudProcesada);
     }
 
     @PatchMapping(RutasApi.CANCELAR)

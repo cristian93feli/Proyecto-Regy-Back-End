@@ -5,8 +5,10 @@ import com.regyinventory.dto.request.CrearProductoRequestDTO;
 import com.regyinventory.dto.response.ApiResponse;
 import com.regyinventory.dto.response.PageResponseDTO;
 import com.regyinventory.dto.response.ProductoResponseDTO;
+import com.regyinventory.dto.response.ImportacionProductosResponseDTO;
 import com.regyinventory.service.contracts.IProductoService;
 import com.regyinventory.utils.constants.api.RutasApi;
+import com.regyinventory.utils.constants.api.ValoresApi;
 import com.regyinventory.utils.constants.mensajes.MensajesExito;
 import com.regyinventory.utils.constants.security.ExpresionesSeguridad;
 import com.regyinventory.utils.constants.swagger.DocumentacionApi;
@@ -29,6 +31,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 
 @RestController
 @RequestMapping(RutasApi.PRODUCTOS)
@@ -49,11 +54,11 @@ public class ProductoController {
             description = DocumentacionApi.Producto.DESCRIPCION_CREAR
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = DocumentacionApi.Respuesta.CREADO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = DocumentacionApi.Respuesta.SOLICITUD_INVALIDA),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = DocumentacionApi.Respuesta.NO_AUTENTICADO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = DocumentacionApi.Respuesta.SIN_PERMISO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = DocumentacionApi.Respuesta.CONFLICTO_NEGOCIO)
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.CREADO, description = DocumentacionApi.Respuesta.CREADO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.SOLICITUD_INVALIDA, description = DocumentacionApi.Respuesta.SOLICITUD_INVALIDA),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.NO_AUTENTICADO, description = DocumentacionApi.Respuesta.NO_AUTENTICADO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.SIN_PERMISO, description = DocumentacionApi.Respuesta.SIN_PERMISO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.CONFLICTO, description = DocumentacionApi.Respuesta.CONFLICTO_NEGOCIO)
     })
     public ResponseEntity<ApiResponse<ProductoResponseDTO>> crear(
             @Valid @RequestBody CrearProductoRequestDTO solicitudCreacion
@@ -71,10 +76,10 @@ public class ProductoController {
             description = DocumentacionApi.Producto.DESCRIPCION_CONSULTAR
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = DocumentacionApi.Respuesta.CONSULTA_EXITOSA),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = DocumentacionApi.Respuesta.NO_AUTENTICADO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = DocumentacionApi.Respuesta.SIN_PERMISO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = DocumentacionApi.Respuesta.NO_ENCONTRADO)
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.EXITO, description = DocumentacionApi.Respuesta.CONSULTA_EXITOSA),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.NO_AUTENTICADO, description = DocumentacionApi.Respuesta.NO_AUTENTICADO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.SIN_PERMISO, description = DocumentacionApi.Respuesta.SIN_PERMISO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.NO_ENCONTRADO, description = DocumentacionApi.Respuesta.NO_ENCONTRADO)
     })
     public ResponseEntity<ApiResponse<ProductoResponseDTO>> buscarPorId(
             @PathVariable Long id
@@ -93,15 +98,15 @@ public class ProductoController {
             description = DocumentacionApi.Producto.DESCRIPCION_LISTAR
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = DocumentacionApi.Respuesta.CONSULTA_EXITOSA),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = DocumentacionApi.Respuesta.NO_AUTENTICADO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = DocumentacionApi.Respuesta.SIN_PERMISO)
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.EXITO, description = DocumentacionApi.Respuesta.CONSULTA_EXITOSA),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.NO_AUTENTICADO, description = DocumentacionApi.Respuesta.NO_AUTENTICADO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.SIN_PERMISO, description = DocumentacionApi.Respuesta.SIN_PERMISO)
     })
     public ResponseEntity<ApiResponse<PageResponseDTO<ProductoResponseDTO>>> listar(
-            @RequestParam(defaultValue = "0") Integer pagina,
-            @RequestParam(defaultValue = "10") Integer tamanoPagina,
-            @RequestParam(defaultValue = "id") String ordenarPor,
-            @RequestParam(defaultValue = "ASC") String direccionOrdenamiento
+            @RequestParam(defaultValue = ValoresApi.PAGINA_INICIAL) Integer pagina,
+            @RequestParam(defaultValue = ValoresApi.TAMANO_PAGINA) Integer tamanoPagina,
+            @RequestParam(defaultValue = ValoresApi.ORDEN_POR_ID) String ordenarPor,
+            @RequestParam(defaultValue = ValoresApi.ORDEN_ASCENDENTE) String direccionOrdenamiento
     ) {
         PageResponseDTO<ProductoResponseDTO> productos = productoService.listar(
                 pagina,
@@ -115,6 +120,33 @@ public class ProductoController {
         );
     }
 
+    @GetMapping(RutasApi.BUSCAR_PRODUCTOS)
+    @PreAuthorize(ExpresionesSeguridad.PRODUCTO_CONSULTAR)
+    @Operation(
+            summary = DocumentacionApi.Producto.BUSCAR,
+            description = DocumentacionApi.Producto.DESCRIPCION_BUSCAR
+    )
+    public ResponseEntity<ApiResponse<List<ProductoResponseDTO>>> buscar(
+            @RequestParam(defaultValue = ValoresApi.TEXTO_VACIO) String termino
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(MensajesExito.Producto.BUSCADOS, productoService.buscar(termino))
+        );
+    }
+
+    @PostMapping(value = RutasApi.IMPORTAR_PRODUCTOS, consumes = ValoresApi.CONTENIDO_MULTIPART)
+    @PreAuthorize(ExpresionesSeguridad.PRODUCTO_CREAR)
+    @Operation(
+            summary = DocumentacionApi.Producto.IMPORTAR,
+            description = DocumentacionApi.Producto.DESCRIPCION_IMPORTAR
+    )
+    public ResponseEntity<ApiResponse<ImportacionProductosResponseDTO>> importar(
+            @RequestPart(ValoresApi.PARAMETRO_ARCHIVO) MultipartFile archivo
+    ) {
+        ImportacionProductosResponseDTO resultado = productoService.importar(archivo);
+        return ResponseEntity.ok(ApiResponse.success(MensajesExito.Producto.IMPORTADOS, resultado));
+    }
+
     @PutMapping(RutasApi.POR_ID)
     @PreAuthorize(ExpresionesSeguridad.PRODUCTO_ACTUALIZAR)
     @Operation(
@@ -122,12 +154,12 @@ public class ProductoController {
             description = DocumentacionApi.Producto.DESCRIPCION_ACTUALIZAR
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = DocumentacionApi.Respuesta.ACTUALIZADO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = DocumentacionApi.Respuesta.SOLICITUD_INVALIDA),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = DocumentacionApi.Respuesta.NO_AUTENTICADO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = DocumentacionApi.Respuesta.SIN_PERMISO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = DocumentacionApi.Respuesta.NO_ENCONTRADO),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = DocumentacionApi.Respuesta.CONFLICTO_NEGOCIO)
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.EXITO, description = DocumentacionApi.Respuesta.ACTUALIZADO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.SOLICITUD_INVALIDA, description = DocumentacionApi.Respuesta.SOLICITUD_INVALIDA),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.NO_AUTENTICADO, description = DocumentacionApi.Respuesta.NO_AUTENTICADO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.SIN_PERMISO, description = DocumentacionApi.Respuesta.SIN_PERMISO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.NO_ENCONTRADO, description = DocumentacionApi.Respuesta.NO_ENCONTRADO),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = DocumentacionApi.CodigoRespuesta.CONFLICTO, description = DocumentacionApi.Respuesta.CONFLICTO_NEGOCIO)
     })
     public ResponseEntity<ApiResponse<ProductoResponseDTO>> actualizar(
             @PathVariable Long id,

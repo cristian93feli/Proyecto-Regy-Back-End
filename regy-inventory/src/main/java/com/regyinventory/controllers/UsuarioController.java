@@ -8,6 +8,7 @@ import com.regyinventory.dto.response.PageResponseDTO;
 import com.regyinventory.dto.response.UsuarioResponseDTO;
 import com.regyinventory.service.contracts.IUsuarioService;
 import com.regyinventory.utils.constants.api.RutasApi;
+import com.regyinventory.utils.constants.api.ValoresApi;
 import com.regyinventory.utils.constants.mensajes.MensajesExito;
 import com.regyinventory.utils.constants.security.ExpresionesSeguridad;
 import com.regyinventory.utils.constants.swagger.DocumentacionApi;
@@ -93,10 +94,10 @@ public class UsuarioController {
             description = DocumentacionApi.Usuario.DESCRIPCION_LISTAR
     )
     public ResponseEntity<ApiResponse<PageResponseDTO<UsuarioResponseDTO>>> listar(
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String direction
+            @RequestParam(defaultValue = ValoresApi.PAGINA_INICIAL) Integer page,
+            @RequestParam(defaultValue = ValoresApi.TAMANO_PAGINA) Integer size,
+            @RequestParam(defaultValue = ValoresApi.ORDEN_POR_ID) String sortBy,
+            @RequestParam(defaultValue = ValoresApi.ORDEN_ASCENDENTE) String direction
     ) {
 
         PageResponseDTO<UsuarioResponseDTO> response =
@@ -216,4 +217,18 @@ public class UsuarioController {
                 )
         );
     }
+    @DeleteMapping(RutasApi.POR_ID)
+    @PreAuthorize(ExpresionesSeguridad.USUARIO_ELIMINAR)
+    @Operation(
+            summary = DocumentacionApi.Usuario.ELIMINAR,
+            description = DocumentacionApi.Usuario.DESCRIPCION_ELIMINAR
+    )
+    public ResponseEntity<ApiResponse<Void>> eliminar(
+            @PathVariable Long id,
+            Principal principal
+    ) {
+        usuarioService.delete(id, principal.getName());
+        return ResponseEntity.ok(ApiResponse.success(MensajesExito.Usuario.ELIMINADO));
+    }
+
 }

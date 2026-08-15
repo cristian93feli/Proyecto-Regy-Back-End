@@ -31,11 +31,12 @@ public class MovimientoInventario extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private TipoMovimiento tipoMovimiento;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "ubicacion_origen_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ubicacion_origen_id")
     private Ubicacion ubicacionOrigen;
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "ubicacion_destino_id", nullable = false)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ubicacion_destino_id")
     private Ubicacion ubicacionDestino;
     @Column(length = 500)
     private String observaciones;

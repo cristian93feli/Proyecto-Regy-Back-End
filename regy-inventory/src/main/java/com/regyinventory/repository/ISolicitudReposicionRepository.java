@@ -1,12 +1,26 @@
 package com.regyinventory.repository;
 
 import com.regyinventory.entities.SolicitudReposicion;
+import com.regyinventory.enums.EstadoSolicitud;
+import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ISolicitudReposicionRepository extends JpaRepository<SolicitudReposicion, Long> {
-    org.springframework.data.domain.Page<SolicitudReposicion> findByEstado(com.regyinventory.enums.EstadoSolicitud estado, org.springframework.data.domain.Pageable pageable);
+    Page<SolicitudReposicion> findByEstado(EstadoSolicitud estado, Pageable pageable);
 
-    long countByEstado(com.regyinventory.enums.EstadoSolicitud estado);
+    Page<SolicitudReposicion> findByZonaDestinoIdIn(Set<Long> zonaDestinoIds, Pageable pageable);
 
-    boolean existsByProductoIdAndEstado(Long productoId, com.regyinventory.enums.EstadoSolicitud estado);
+    Page<SolicitudReposicion> findByEstadoAndZonaDestinoIdIn(
+            EstadoSolicitud estado,
+            Set<Long> zonaDestinoIds,
+            Pageable pageable
+    );
+
+    long countByEstado(EstadoSolicitud estado);
+
+    long countByEstadoAndZonaDestinoIdIn(EstadoSolicitud estado, Set<Long> zonaDestinoIds);
+
+    boolean existsByProductoIdAndEstado(Long productoId, EstadoSolicitud estado);
 }

@@ -34,4 +34,7 @@ public interface IUsuarioService {
             boolean active,
             String authenticatedUsername
     );
+
+    /** Elimina un usuario cuando no rompe la responsabilidad mínima de una zona ni la integridad histórica. */
+    void delete(Long id, String authenticatedUsername);
 }

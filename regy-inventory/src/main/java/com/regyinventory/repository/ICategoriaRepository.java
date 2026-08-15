@@ -14,4 +14,6 @@ public interface ICategoriaRepository
             String nombre,
             Long id
     );
+
+    java.util.Optional<Categoria> findByNombreIgnoreCase(String nombre);
 }

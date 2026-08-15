@@ -13,14 +13,18 @@ import com.regyinventory.exceptions.BusinessException;
 import com.regyinventory.exceptions.ResourceNotFoundException;
 import com.regyinventory.repository.IRolRepository;
 import com.regyinventory.repository.IUsuarioRepository;
+import com.regyinventory.repository.IUbicacionRepository;
+import com.regyinventory.enums.TipoUbicacion;
 import com.regyinventory.service.contracts.IUsuarioService;
 import com.regyinventory.utils.PageableUtil;
 import com.regyinventory.utils.constants.mensajes.MensajesError;
+import com.regyinventory.utils.constants.numeros.Numeros;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
@@ -37,6 +41,7 @@ public class UsuarioService implements IUsuarioService {
     private final IRolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
+    private final IUbicacionRepository ubicacionRepository;
 
     @Override
     @Transactional
@@ -208,6 +213,35 @@ public class UsuarioService implements IUsuarioService {
                 usuarioRepository.save(usuario);
 
         return convertirRespuesta(usuarioActualizado);
+    }
+
+    /** Elimina físicamente un usuario solo cuando no es el autenticado y no deja una zona sin empaquetadores. */
+    @Override
+    @Transactional
+    public void delete(Long id, String authenticatedUsername) {
+        Usuario usuario = buscarEntidad(id);
+        if (usuario.getUsername().equalsIgnoreCase(authenticatedUsername)) {
+            throw new BusinessException(MensajesError.Usuario.AUTOELIMINACION);
+        }
+
+        var zonasResponsables = ubicacionRepository.findDistinctByUsuariosResponsablesIdAndTipo(
+                id,
+                TipoUbicacion.ZONA_EMPAQUE
+        );
+        boolean esResponsableUnico = zonasResponsables.stream()
+                .anyMatch(zona -> zona.getUsuariosResponsables().size() <= Numeros.UNO);
+        if (esResponsableUnico) {
+            throw new BusinessException(MensajesError.Usuario.RESPONSABLE_UNICO_ZONA);
+        }
+        zonasResponsables.forEach(zona -> zona.getUsuariosResponsables().remove(usuario));
+        ubicacionRepository.saveAll(zonasResponsables);
+
+        try {
+            usuarioRepository.delete(usuario);
+            usuarioRepository.flush();
+        } catch (DataIntegrityViolationException excepcion) {
+            throw new BusinessException(MensajesError.Usuario.CON_HISTORIAL_NO_ELIMINABLE);
+        }
     }
 
     private Usuario buscarEntidad(Long id) {

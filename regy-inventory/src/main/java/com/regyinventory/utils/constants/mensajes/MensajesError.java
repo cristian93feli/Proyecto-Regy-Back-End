@@ -61,6 +61,10 @@ public final class MensajesError {
         public static final String AUTODESACTIVACION =
                 "No puedes desactivar tu propio usuario";
 
+        public static final String AUTOELIMINACION = "No puedes eliminar tu propio usuario";
+        public static final String RESPONSABLE_UNICO_ZONA = "El usuario no puede eliminarse porque es el único responsable de una zona de empaque";
+        public static final String CON_HISTORIAL_NO_ELIMINABLE = "El usuario tiene historial operativo asociado y no puede eliminarse físicamente";
+
         private Usuario() {
         }
     }
@@ -147,6 +151,10 @@ public final class MensajesError {
 
         public static final String TIENE_SOLICITUDES_PENDIENTES =
                 "No se puede eliminar un producto con solicitudes pendientes";
+        public static final String ARCHIVO_IMPORTACION_VACIO = "El archivo de importación está vacío";
+        public static final String ARCHIVO_IMPORTACION_INVALIDO = "No fue posible procesar el archivo Excel";
+        public static final String COLUMNAS_IMPORTACION_INVALIDAS = "El Excel no contiene las columnas requeridas";
+        public static final String CAMPOS_OBLIGATORIOS_IMPORTACION = "Número de producto y nombre del producto son obligatorios";
 
         private Producto() {
         }
@@ -182,6 +190,8 @@ public final class MensajesError {
                 "La ubicación pertenece a una jerarquía inactiva";
         public static final String NO_ADMITE_INVENTARIO =
                 "El inventario únicamente puede existir en cajas o zonas de empaque";
+        public static final String ZONA_REQUIERE_RESPONSABLE = "Una zona de empaque debe tener al menos un usuario empaquetador responsable";
+        public static final String RESPONSABLE_DEBE_SER_EMPAQUETADOR = "Solo usuarios con rol empaquetador pueden ser responsables de una zona";
         public static final String INGRESO_REQUIERE_CAJA =
                 "Los ingresos de mercancía deben registrarse en una caja o en una zona de empaque";
 
@@ -199,6 +209,12 @@ public final class MensajesError {
                 "Producto no encontrado";
         public static final String PRODUCTO_INACTIVO =
                 "El producto está inactivo";
+        public static final String PRODUCTO_SIN_STOCK =
+                "El producto seleccionado no tiene stock disponible";
+        public static final String CODIGO_BARRAS_NO_COINCIDE =
+                "El código de barras no corresponde al producto solicitado";
+        public static final String AJUSTE_SIN_CAMBIOS =
+                "La nueva cantidad es igual a la cantidad actual del inventario";
 
         private Inventario() {
         }
@@ -213,6 +229,16 @@ public final class MensajesError {
         public static final String ZONA_NO_ENCONTRADA = "Zona de empaque no encontrada";
         public static final String DESTINO_INVALIDO =
                 "La ubicación destino debe ser una zona de empaque activa";
+        public static final String ORIGEN_REQUERIDO =
+                "Debe seleccionar una caja de origen para completar la solicitud";
+        public static final String ORIGEN_INVALIDO =
+                "La ubicación de origen debe ser una caja activa con stock del producto solicitado";
+        public static final String CODIGO_BARRAS_INVALIDO =
+                "El código de barras validado no corresponde al producto de la solicitud";
+        public static final String CANTIDAD_SUPERA_SOLICITUD =
+                "La cantidad a enviar no puede superar la cantidad pendiente de la solicitud";
+        public static final String CANTIDAD_SUPERA_STOCK_CAJA =
+                "La cantidad a enviar no puede superar el stock disponible de la caja seleccionada";
 
         private SolicitudReposicion() {
         }
@@ -241,6 +267,8 @@ public final class MensajesError {
 
         public static final String USUARIO_AUTENTICADO_NO_ENCONTRADO =
                 "Usuario autenticado no encontrado";
+        public static final String UBICACION_NO_ASIGNADA =
+                "La ubicación no está asignada al usuario empaquetador autenticado";
 
         private Operacion() {
         }

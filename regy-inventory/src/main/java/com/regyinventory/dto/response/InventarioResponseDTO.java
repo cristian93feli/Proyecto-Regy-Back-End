@@ -21,6 +21,7 @@ public class InventarioResponseDTO {
     private TipoUbicacion tipoUbicacion;
     private Long depositoId;
     private String depositoNombre;
+    private java.time.LocalDate fechaVencimiento;
     private Integer cantidad;
     private Integer stockMinimo;
     private Boolean stockBajo;

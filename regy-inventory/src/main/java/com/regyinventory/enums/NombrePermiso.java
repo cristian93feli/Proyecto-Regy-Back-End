@@ -13,6 +13,7 @@ public enum NombrePermiso {
     USER_READ,
     USER_UPDATE,
     USER_ENABLE_DISABLE,
+    USER_DELETE,
 
     // Depósitos
     WAREHOUSE_CREATE,
@@ -36,6 +37,7 @@ public enum NombrePermiso {
     STOCK_READ,
     STOCK_RECEIVE,
     STOCK_MOVE,
+    STOCK_SELL,
 
     // Auditorías
     WAREHOUSE_AUDIT,

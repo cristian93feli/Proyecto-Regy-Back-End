@@ -74,6 +74,39 @@ public final class MensajesValidacion {
         }
     }
 
+    public static final class Inventario {
+
+        public static final String PRODUCTO_OBLIGATORIO =
+                "El producto es obligatorio";
+
+        public static final String UBICACION_OBLIGATORIA =
+                "La ubicación es obligatoria";
+
+        public static final String NUEVA_CANTIDAD_OBLIGATORIA =
+                "La nueva cantidad es obligatoria";
+
+        public static final String NUEVA_CANTIDAD_INVALIDA =
+                "La nueva cantidad no puede ser negativa";
+
+        public static final String OBSERVACIONES_MAXIMAS =
+                "Las observaciones no pueden superar 500 caracteres";
+
+        private Inventario() {
+        }
+    }
+
+    public static final class SolicitudReposicion {
+
+        public static final String CANTIDAD_ENVIO_OBLIGATORIA =
+                "La cantidad a enviar es obligatoria";
+
+        public static final String CANTIDAD_ENVIO_INVALIDA =
+                "La cantidad a enviar debe ser mayor a cero";
+
+        private SolicitudReposicion() {
+        }
+    }
+
     public static final class Marca {
 
         public static final String NOMBRE_OBLIGATORIO =

@@ -8,6 +8,10 @@ import com.regyinventory.entities.Ubicacion;
 import com.regyinventory.entities.Usuario;
 import com.regyinventory.enums.TipoAccionLog;
 import com.regyinventory.enums.TipoUbicacion;
+import com.regyinventory.enums.NombreRol;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 import com.regyinventory.exceptions.BusinessException;
 import com.regyinventory.exceptions.ResourceNotFoundException;
 import com.regyinventory.repository.ILoteInventarioRepository;
@@ -17,11 +21,14 @@ import com.regyinventory.service.contracts.IUbicacionService;
 import com.regyinventory.utils.PageableUtil;
 import com.regyinventory.utils.constants.log.ConstantesLog;
 import com.regyinventory.utils.constants.mensajes.MensajesError;
+import com.regyinventory.utils.constants.numeros.Numeros;
 
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -41,7 +48,7 @@ public class UbicacionService implements IUbicacionService {
         validarCodigoDisponible(codigoNormalizado, null);
 
         Ubicacion ubicacionPadre = resolverYValidarPadre(solicitudCreacion.getTipo(), solicitudCreacion.getUbicacionPadreId());
-        Usuario usuarioAsignado = resolverUsuarioAsignado(solicitudCreacion.getTipo(), solicitudCreacion.getUsuarioAsignadoId());
+        Set<Usuario> usuariosResponsables = resolverUsuariosResponsables(solicitudCreacion.getTipo(), solicitudCreacion.getUsuariosResponsablesIds());
 
         Ubicacion nuevaUbicacion = Ubicacion.builder()
                 .codigo(codigoNormalizado)
@@ -49,7 +56,7 @@ public class UbicacionService implements IUbicacionService {
                 .descripcion(limpiarTextoOpcional(solicitudCreacion.getDescripcion()))
                 .tipo(solicitudCreacion.getTipo())
                 .ubicacionPadre(ubicacionPadre)
-                .usuarioAsignado(usuarioAsignado)
+                .usuariosResponsables(usuariosResponsables)
                 .build();
 
         Ubicacion ubicacionCreada = ubicacionRepository.save(nuevaUbicacion);
@@ -72,8 +79,8 @@ public class UbicacionService implements IUbicacionService {
         ubicacionExistente.setCodigo(codigoNormalizado);
         ubicacionExistente.setNombre(solicitudActualizacion.getNombre().trim());
         ubicacionExistente.setDescripcion(limpiarTextoOpcional(solicitudActualizacion.getDescripcion()));
-        ubicacionExistente.setUsuarioAsignado(
-                resolverUsuarioAsignado(ubicacionExistente.getTipo(), solicitudActualizacion.getUsuarioAsignadoId())
+        ubicacionExistente.setUsuariosResponsables(
+                resolverUsuariosResponsables(ubicacionExistente.getTipo(), solicitudActualizacion.getUsuariosResponsablesIds())
         );
 
         return convertirRespuesta(ubicacionRepository.save(ubicacionExistente));
@@ -81,7 +88,9 @@ public class UbicacionService implements IUbicacionService {
 
     @Override
     public UbicacionResponseDTO buscar(Long ubicacionId) {
-        return convertirRespuesta(obtenerUbicacion(ubicacionId));
+        Ubicacion ubicacion = obtenerUbicacion(ubicacionId);
+        validarLecturaEmpaquetador(ubicacion);
+        return convertirRespuesta(ubicacion);
     }
 
     @Override
@@ -91,14 +100,36 @@ public class UbicacionService implements IUbicacionService {
             String ordenarPor,
             String direccion
     ) {
+        Pageable pageable = PageableUtil.create(pagina, tamano, ordenarPor, direccion);
+        if (!operacionSupport.usuarioAutenticadoEsEmpaquetador()) {
+            return PageResponseDTO.fromPage(ubicacionRepository.findAll(pageable), this::convertirRespuesta);
+        }
+
+        List<Ubicacion> zonasAsignadas = ubicacionRepository.findDistinctByUsuariosResponsablesIdAndTipo(
+                operacionSupport.obtenerUsuarioAutenticado().getId(),
+                TipoUbicacion.ZONA_EMPAQUE
+        );
+        int desde = Math.min((int) pageable.getOffset(), zonasAsignadas.size());
+        int hasta = Math.min(desde + pageable.getPageSize(), zonasAsignadas.size());
         return PageResponseDTO.fromPage(
-                ubicacionRepository.findAll(PageableUtil.create(pagina, tamano, ordenarPor, direccion)),
+                new PageImpl<>(zonasAsignadas.subList(desde, hasta), pageable, zonasAsignadas.size()),
                 this::convertirRespuesta
         );
     }
 
     @Override
     public List<UbicacionResponseDTO> listarPorTipo(TipoUbicacion tipoUbicacion) {
+        if (operacionSupport.usuarioAutenticadoEsEmpaquetador()) {
+            if (tipoUbicacion != TipoUbicacion.ZONA_EMPAQUE) {
+                return List.of();
+            }
+            return ubicacionRepository.findDistinctByUsuariosResponsablesIdAndTipo(
+                            operacionSupport.obtenerUsuarioAutenticado().getId(),
+                            TipoUbicacion.ZONA_EMPAQUE
+                    ).stream()
+                    .map(this::convertirRespuesta)
+                    .toList();
+        }
         return ubicacionRepository.findByTipo(tipoUbicacion).stream().map(this::convertirRespuesta).toList();
     }
 
@@ -117,7 +148,7 @@ public class UbicacionService implements IUbicacionService {
         if (!nuevoEstadoActivo && ubicacionRepository.existsByUbicacionPadreId(ubicacionId)) {
             throw new BusinessException(MensajesError.Ubicacion.CON_HIJAS_NO_DESACTIVABLE);
         }
-        if (!nuevoEstadoActivo && loteInventarioRepository.existsByUbicacionIdAndCantidadGreaterThan(ubicacionId, 0)) {
+        if (!nuevoEstadoActivo && loteInventarioRepository.existsByUbicacionIdAndCantidadGreaterThan(ubicacionId, Numeros.CERO)) {
             throw new BusinessException(MensajesError.Ubicacion.CON_STOCK_NO_DESACTIVABLE);
         }
         ubicacion.setActivo(nuevoEstadoActivo);
@@ -131,7 +162,7 @@ public class UbicacionService implements IUbicacionService {
         if (ubicacionRepository.existsByUbicacionPadreId(ubicacionId)) {
             throw new BusinessException(MensajesError.Ubicacion.CON_HIJAS_NO_ELIMINABLE);
         }
-        if (loteInventarioRepository.existsByUbicacionIdAndCantidadGreaterThan(ubicacionId, 0)) {
+        if (loteInventarioRepository.existsByUbicacionIdAndCantidadGreaterThan(ubicacionId, Numeros.CERO)) {
             throw new BusinessException(MensajesError.Ubicacion.CON_STOCK_NO_ELIMINABLE);
         }
         ubicacionRepository.delete(ubicacion);
@@ -157,22 +188,37 @@ public class UbicacionService implements IUbicacionService {
         return ubicacionPadre;
     }
 
-    private Usuario resolverUsuarioAsignado(TipoUbicacion tipoUbicacion, Long usuarioAsignadoId) {
+    /** Valida y resuelve los empaquetadores responsables asociados a una zona de empaque. */
+    private Set<Usuario> resolverUsuariosResponsables(TipoUbicacion tipoUbicacion, Set<Long> usuariosResponsablesIds) {
         if (tipoUbicacion != TipoUbicacion.ZONA_EMPAQUE) {
-            if (usuarioAsignadoId != null) {
+            if (usuariosResponsablesIds != null && !usuariosResponsablesIds.isEmpty()) {
                 throw new BusinessException(MensajesError.Ubicacion.USUARIO_SOLO_ZONA);
             }
-            return null;
+            return new HashSet<>();
         }
-        if (usuarioAsignadoId == null) {
-            return null;
+        if (usuariosResponsablesIds == null || usuariosResponsablesIds.isEmpty()) {
+            throw new BusinessException(MensajesError.Ubicacion.ZONA_REQUIERE_RESPONSABLE);
         }
-        Usuario usuarioAsignado = usuarioRepository.findById(usuarioAsignadoId)
-                .orElseThrow(() -> new ResourceNotFoundException(MensajesError.Ubicacion.USUARIO_ASIGNADO_NO_ENCONTRADO));
-        if (!usuarioAsignado.getActivo()) {
-            throw new BusinessException(MensajesError.Ubicacion.USUARIO_ASIGNADO_INACTIVO);
+        Set<Usuario> responsables = usuariosResponsablesIds.stream().map(usuarioId -> {
+            Usuario usuario = usuarioRepository.findById(usuarioId)
+                    .orElseThrow(() -> new ResourceNotFoundException(MensajesError.Ubicacion.USUARIO_ASIGNADO_NO_ENCONTRADO));
+            if (!usuario.getActivo()) throw new BusinessException(MensajesError.Ubicacion.USUARIO_ASIGNADO_INACTIVO);
+            boolean empaquetador = usuario.getRoles().stream().anyMatch(rol -> rol.getNombre() == NombreRol.ROLE_PACKER);
+            if (!empaquetador) throw new BusinessException(MensajesError.Ubicacion.RESPONSABLE_DEBE_SER_EMPAQUETADOR);
+            return usuario;
+        }).collect(Collectors.toSet());
+        return responsables;
+    }
+
+    /** Restringe a los empaquetadores para que solo consulten las zonas que tienen asignadas. */
+    private void validarLecturaEmpaquetador(Ubicacion ubicacion) {
+        if (!operacionSupport.usuarioAutenticadoEsEmpaquetador()) {
+            return;
         }
-        return usuarioAsignado;
+        if (ubicacion.getTipo() != TipoUbicacion.ZONA_EMPAQUE
+                || !operacionSupport.obtenerZonasAsignadasIds().contains(ubicacion.getId())) {
+            throw new BusinessException(MensajesError.Operacion.UBICACION_NO_ASIGNADA);
+        }
     }
 
     private void validarCodigoDisponible(String codigo, Long ubicacionIdExcluida) {
@@ -209,8 +255,8 @@ public class UbicacionService implements IUbicacionService {
                 .ubicacionPadreNombre(ubicacion.getUbicacionPadre() == null ? null : ubicacion.getUbicacionPadre().getNombre())
                 .depositoId(deposito == null ? null : deposito.getId())
                 .depositoNombre(deposito == null ? null : deposito.getNombre())
-                .usuarioAsignadoId(ubicacion.getUsuarioAsignado() == null ? null : ubicacion.getUsuarioAsignado().getId())
-                .usuarioAsignadoNombre(ubicacion.getUsuarioAsignado() == null ? null : ubicacion.getUsuarioAsignado().getUsername())
+                .usuariosResponsablesIds(ubicacion.getUsuariosResponsables().stream().map(Usuario::getId).collect(Collectors.toSet()))
+                .usuariosResponsablesNombres(ubicacion.getUsuariosResponsables().stream().map(Usuario::getUsername).collect(Collectors.toSet()))
                 .admiteInventario(admiteInventario(ubicacion))
                 .activo(ubicacion.getActivo())
                 .build();

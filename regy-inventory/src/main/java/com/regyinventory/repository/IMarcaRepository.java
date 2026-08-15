@@ -14,4 +14,6 @@ public interface IMarcaRepository
             String nombre,
             Long id
     );
+
+    java.util.Optional<Marca> findByNombreIgnoreCase(String nombre);
 }

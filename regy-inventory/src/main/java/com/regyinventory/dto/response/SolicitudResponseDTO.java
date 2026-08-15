@@ -10,8 +10,10 @@ import lombok.*;
 public class SolicitudResponseDTO {
     private Long id;
     private Long productoId;
+    private String productoNumero;
     private String productoNombre;
     private Integer cantidad;
+    private Integer cantidadPendiente;
     private com.regyinventory.enums.PrioridadSolicitud prioridad;
     private com.regyinventory.enums.EstadoSolicitud estado;
     private Long zonaDestinoId;
@@ -20,4 +22,10 @@ public class SolicitudResponseDTO {
     private String usuarioResponsable;
     private String observaciones;
     private java.time.LocalDateTime fechaCreacion;
+    private Long sugerenciaUbicacionId;
+    private String sugerenciaUbicacionCodigo;
+    private String sugerenciaUbicacionNombre;
+    private Integer sugerenciaCantidadDisponible;
+    private java.time.LocalDate sugerenciaFechaVencimiento;
+    private String sugerenciaCriterio;
 }

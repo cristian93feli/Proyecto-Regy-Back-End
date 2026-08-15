@@ -24,8 +24,8 @@ public class UbicacionResponseDTO {
     private String ubicacionPadreNombre;
     private Long depositoId;
     private String depositoNombre;
-    private Long usuarioAsignadoId;
-    private String usuarioAsignadoNombre;
+    private java.util.Set<Long> usuariosResponsablesIds;
+    private java.util.Set<String> usuariosResponsablesNombres;
     private Boolean admiteInventario;
     private Boolean activo;
 }

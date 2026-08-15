@@ -155,6 +155,7 @@ public class DataInitializer implements CommandLineRunner {
                 NombrePermiso.PRODUCT_READ,
                 NombrePermiso.PACKING_ZONE_READ,
                 NombrePermiso.STOCK_READ,
+                NombrePermiso.STOCK_SELL,
                 NombrePermiso.PACKING_ZONE_AUDIT,
 
                 NombrePermiso.REPLENISHMENT_REQUEST_CREATE,

@@ -33,6 +33,6 @@ public class CrearUbicacionRequestDTO {
     @Schema(description = "Obligatorio para ESTANTE y CAJA; nulo para DEPÓSITO y ZONA_EMPAQUE")
     private Long ubicacionPadreId;
 
-    @Schema(description = "Usuario responsable; únicamente aplica a ZONA_EMPAQUE")
-    private Long usuarioAsignadoId;
+    @Schema(description = "Usuarios empaquetadores responsables; únicamente aplica a ZONA_EMPAQUE y requiere al menos uno")
+    private java.util.Set<Long> usuariosResponsablesIds;
 }

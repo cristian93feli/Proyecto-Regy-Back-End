@@ -37,6 +37,8 @@ public final class MensajesExito {
         public static final String DESACTIVADO =
                 "Usuario desactivado correctamente";
 
+        public static final String ELIMINADO = "Usuario eliminado correctamente";
+
         private Usuario() {
         }
     }
@@ -129,6 +131,8 @@ public final class MensajesExito {
 
         public static final String ELIMINADO =
                 "Producto eliminado correctamente";
+        public static final String BUSCADOS = "Productos encontrados correctamente";
+        public static final String IMPORTADOS = "Importación de productos procesada correctamente";
 
         public static final String NOMBRE_ENTIDAD =
                 "Producto";
@@ -169,6 +173,10 @@ public final class MensajesExito {
         public static final String MOVIDO = "Stock movido correctamente";
         public static final String EXISTENCIAS = "Existencias consultadas correctamente";
         public static final String STOCK_BAJO = "Stock bajo consultado correctamente";
+        public static final String VENTA_REGISTRADA = "Salida por venta registrada correctamente";
+        public static final String ORIGENES_LISTADOS = "Ubicaciones con stock consultadas correctamente";
+        public static final String PRODUCTOS_DISPONIBLES = "Productos con stock consultados correctamente";
+        public static final String AJUSTADO = "Inventario ajustado correctamente";
         private Inventario() { }
     }
 
@@ -176,7 +184,9 @@ public final class MensajesExito {
         public static final String CREADA = "Solicitud creada correctamente";
         public static final String LISTADAS = "Solicitudes consultadas correctamente";
         public static final String COMPLETADA = "Solicitud completada correctamente";
+        public static final String COMPLETADA_PARCIAL = "Solicitud atendida parcialmente; quedó cantidad pendiente";
         public static final String CANCELADA = "Solicitud cancelada correctamente";
+        public static final String SUGERENCIAS = "Sugerencias de reposición consultadas correctamente";
         private SolicitudReposicion() { }
     }
 
