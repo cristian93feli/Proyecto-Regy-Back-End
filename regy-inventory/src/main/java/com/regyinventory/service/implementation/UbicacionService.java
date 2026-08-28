@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 import com.regyinventory.exceptions.BusinessException;
 import com.regyinventory.exceptions.ResourceNotFoundException;
 import com.regyinventory.repository.ILoteInventarioRepository;
+import com.regyinventory.repository.ISolicitudReposicionRepository;
+import com.regyinventory.repository.IMovimientoInventarioRepository;
+import com.regyinventory.repository.IIngresoStockRepository;
 import com.regyinventory.repository.IUbicacionRepository;
 import com.regyinventory.repository.IUsuarioRepository;
 import com.regyinventory.service.contracts.IUbicacionService;
@@ -26,6 +29,7 @@ import com.regyinventory.utils.constants.numeros.Numeros;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +43,9 @@ public class UbicacionService implements IUbicacionService {
     private final IUbicacionRepository ubicacionRepository;
     private final IUsuarioRepository usuarioRepository;
     private final ILoteInventarioRepository loteInventarioRepository;
+    private final IIngresoStockRepository ingresoStockRepository;
+    private final IMovimientoInventarioRepository movimientoInventarioRepository;
+    private final ISolicitudReposicionRepository solicitudReposicionRepository;
     private final OperacionSupport operacionSupport;
 
     @Override
@@ -165,7 +172,25 @@ public class UbicacionService implements IUbicacionService {
         if (loteInventarioRepository.existsByUbicacionIdAndCantidadGreaterThan(ubicacionId, Numeros.CERO)) {
             throw new BusinessException(MensajesError.Ubicacion.CON_STOCK_NO_ELIMINABLE);
         }
-        ubicacionRepository.delete(ubicacion);
+        validarUbicacionSinHistorialAsociado(ubicacionId);
+
+        try {
+            ubicacionRepository.delete(ubicacion);
+            ubicacionRepository.flush();
+        } catch (DataIntegrityViolationException excepcion) {
+            throw new BusinessException(MensajesError.Ubicacion.TIENE_REGISTROS_ASOCIADOS);
+        }
+    }
+
+    /** Impide eliminar ubicaciones utilizadas previamente por inventario, movimientos o solicitudes. */
+    private void validarUbicacionSinHistorialAsociado(Long ubicacionId) {
+        boolean tieneHistorial = loteInventarioRepository.existsByUbicacionId(ubicacionId)
+                || ingresoStockRepository.existsByUbicacionId(ubicacionId)
+                || movimientoInventarioRepository.existsByUbicacionOrigenIdOrUbicacionDestinoId(ubicacionId, ubicacionId)
+                || solicitudReposicionRepository.existsByZonaDestinoId(ubicacionId);
+        if (tieneHistorial) {
+            throw new BusinessException(MensajesError.Ubicacion.TIENE_REGISTROS_ASOCIADOS);
+        }
     }
 
     private Ubicacion resolverYValidarPadre(TipoUbicacion tipoUbicacion, Long ubicacionPadreId) {

@@ -23,4 +23,8 @@ public interface ISolicitudReposicionRepository extends JpaRepository<SolicitudR
     long countByEstadoAndZonaDestinoIdIn(EstadoSolicitud estado, Set<Long> zonaDestinoIds);
 
     boolean existsByProductoIdAndEstado(Long productoId, EstadoSolicitud estado);
+
+    boolean existsByProductoId(Long productoId);
+
+    boolean existsByZonaDestinoId(Long zonaDestinoId);
 }

@@ -151,6 +151,9 @@ public final class MensajesError {
 
         public static final String TIENE_SOLICITUDES_PENDIENTES =
                 "No se puede eliminar un producto con solicitudes pendientes";
+
+        public static final String TIENE_HISTORIAL_ASOCIADO =
+                "No se puede eliminar el producto porque tiene ingresos, movimientos u otros registros de inventario asociados";
         public static final String ARCHIVO_IMPORTACION_VACIO = "El archivo de importación está vacío";
         public static final String ARCHIVO_IMPORTACION_INVALIDO = "No fue posible procesar el archivo Excel";
         public static final String COLUMNAS_IMPORTACION_INVALIDAS = "El Excel no contiene las columnas requeridas";
@@ -172,6 +175,8 @@ public final class MensajesError {
                 "No se puede eliminar una ubicación que tiene ubicaciones hijas";
         public static final String CON_STOCK_NO_ELIMINABLE =
                 "No se puede eliminar una ubicación que contiene stock";
+        public static final String TIENE_REGISTROS_ASOCIADOS =
+                "No se puede eliminar la ubicación porque tiene ingresos, movimientos, solicitudes u otros registros asociados";
         public static final String RAIZ_CON_PADRE =
                 "Los depósitos y zonas de empaque no pueden tener ubicación padre";
         public static final String HIJA_SIN_PADRE =
@@ -260,6 +265,15 @@ public final class MensajesError {
         public static final String NO_ENCONTRADA = "Configuración no encontrada";
 
         private Configuracion() {
+        }
+    }
+
+    public static final class Persistencia {
+
+        public static final String REGISTRO_CON_ASOCIACIONES =
+                "No se puede eliminar el registro porque tiene información asociada";
+
+        private Persistencia() {
         }
     }
 

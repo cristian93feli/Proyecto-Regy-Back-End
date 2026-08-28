@@ -18,6 +18,8 @@ public class ImportacionProductosResponseDTO {
     private Integer productosCreados;
     private Integer marcasCreadas;
     private Integer categoriasCreadas;
+    private String archivoErroresNombre;
+    private String archivoErroresBase64;
     @Builder.Default
     private List<ErrorImportacionProductoDTO> errores = new ArrayList<>();
 }

@@ -28,6 +28,10 @@ public interface ILoteInventarioRepository extends JpaRepository<LoteInventario,
 
     boolean existsByProductoIdAndCantidadGreaterThan(Long productoId, Integer cantidad);
 
+    boolean existsByProductoId(Long productoId);
+
+    boolean existsByUbicacionId(Long ubicacionId);
+
     boolean existsByUbicacionIdAndCantidadGreaterThan(Long ubicacionId, Integer cantidad);
 
     List<LoteInventario> findAllByCantidadGreaterThan(Integer cantidad);

@@ -19,6 +19,11 @@ public final class ConstantesImportacionProducto {
     public static final String ENCABEZADO_NOMBRE = "Nombre del Producto";
     public static final String ENCABEZADO_SKU = "SKU";
 
+    public static final String ENCABEZADO_FILA = "Fila";
+    public static final String ENCABEZADO_MOTIVO = "Motivo del rechazo";
+    public static final String ARCHIVO_ERRORES_NOMBRE = "productos_rechazados.xlsx";
+    public static final String HOJA_RECHAZADOS = "Rechazados";
+
     public static final String[] ENCABEZADOS = {
             ENCABEZADO_NUMERO,
             ENCABEZADO_MARCA,

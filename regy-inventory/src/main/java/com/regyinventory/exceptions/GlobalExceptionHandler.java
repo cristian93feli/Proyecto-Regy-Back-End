@@ -1,7 +1,11 @@
 package com.regyinventory.exceptions;
 
 import com.regyinventory.dto.response.ApiResponse;
+import com.regyinventory.utils.constants.mensajes.MensajesError;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -9,9 +13,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -62,7 +63,7 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error(
-                        "Usuario o contraseña incorrectos",
+                        MensajesError.CREDENCIALES_INCORRECTAS,
                         null,
                         request.getRequestURI()
                 ));
@@ -81,8 +82,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(
-                        "Existen campos inválidos",
+                        MensajesError.CAMPOS_INVALIDOS,
                         errors,
+                        request.getRequestURI()
+                ));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(
+            DataIntegrityViolationException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(
+                        MensajesError.Persistencia.REGISTRO_CON_ASOCIACIONES,
+                        null,
                         request.getRequestURI()
                 ));
     }
@@ -94,7 +108,7 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(
-                        "Ocurrió un error interno en el servidor",
+                        MensajesError.ERROR_INTERNO,
                         exception.getMessage(),
                         request.getRequestURI()
                 ));

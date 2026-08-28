@@ -12,6 +12,7 @@ public final class Numeros {
     public static final int CUATRO = 4;
     public static final int CINCO = 5;
     public static final int SEIS = 6;
+    public static final int SIETE = 7;
 
     public static final int OCHO = 8;
     public static final int DIEZ = 10;
