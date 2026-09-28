@@ -62,7 +62,11 @@ public interface IProductoService {
             Integer pagina,
             Integer tamanoPagina,
             String ordenarPor,
-            String direccionOrdenamiento
+            String direccionOrdenamiento,
+            String termino,
+            Long marcaId,
+            Long categoriaId,
+            Boolean activo
     );
 
     /**

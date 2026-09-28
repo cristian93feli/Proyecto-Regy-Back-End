@@ -6,7 +6,9 @@ import com.regyinventory.dto.response.ApiResponse;
 import com.regyinventory.dto.response.PageResponseDTO;
 import com.regyinventory.dto.response.ProductoResponseDTO;
 import com.regyinventory.dto.response.ImportacionProductosResponseDTO;
+import com.regyinventory.dto.response.ImportacionProductosProgresoDTO;
 import com.regyinventory.service.contracts.IProductoService;
+import com.regyinventory.service.implementation.importacion.ProductoImportacionOrquestadorService;
 import com.regyinventory.utils.constants.api.RutasApi;
 import com.regyinventory.utils.constants.api.ValoresApi;
 import com.regyinventory.utils.constants.mensajes.MensajesExito;
@@ -46,6 +48,7 @@ import java.util.List;
 public class ProductoController {
 
     private final IProductoService productoService;
+    private final ProductoImportacionOrquestadorService productoImportacionOrquestadorService;
 
     @PostMapping
     @PreAuthorize(ExpresionesSeguridad.PRODUCTO_CREAR)
@@ -106,13 +109,21 @@ public class ProductoController {
             @RequestParam(defaultValue = ValoresApi.PAGINA_INICIAL) Integer pagina,
             @RequestParam(defaultValue = ValoresApi.TAMANO_PAGINA) Integer tamanoPagina,
             @RequestParam(defaultValue = ValoresApi.ORDEN_POR_ID) String ordenarPor,
-            @RequestParam(defaultValue = ValoresApi.ORDEN_ASCENDENTE) String direccionOrdenamiento
+            @RequestParam(defaultValue = ValoresApi.ORDEN_ASCENDENTE) String direccionOrdenamiento,
+            @RequestParam(defaultValue = ValoresApi.TEXTO_VACIO) String termino,
+            @RequestParam(required = false) Long marcaId,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) Boolean activo
     ) {
         PageResponseDTO<ProductoResponseDTO> productos = productoService.listar(
                 pagina,
                 tamanoPagina,
                 ordenarPor,
-                direccionOrdenamiento
+                direccionOrdenamiento,
+                termino,
+                marcaId,
+                categoriaId,
+                activo
         );
 
         return ResponseEntity.ok(
@@ -132,6 +143,29 @@ public class ProductoController {
         return ResponseEntity.ok(
                 ApiResponse.success(MensajesExito.Producto.BUSCADOS, productoService.buscar(termino))
         );
+    }
+
+
+    @PostMapping(value = RutasApi.INICIAR_IMPORTACION_PRODUCTOS, consumes = ValoresApi.CONTENIDO_MULTIPART)
+    @PreAuthorize(ExpresionesSeguridad.PRODUCTO_CREAR)
+    @Operation(summary = DocumentacionApi.Producto.INICIAR_IMPORTACION, description = DocumentacionApi.Producto.DESCRIPCION_INICIAR_IMPORTACION)
+    public ResponseEntity<ApiResponse<ImportacionProductosProgresoDTO>> iniciarImportacion(
+            @RequestPart(ValoresApi.PARAMETRO_ARCHIVO) MultipartFile archivo
+    ) {
+        ImportacionProductosProgresoDTO progreso = productoImportacionOrquestadorService.iniciar(archivo);
+        return ResponseEntity.accepted().body(ApiResponse.success(MensajesExito.Producto.IMPORTADOS, progreso));
+    }
+
+    @GetMapping(RutasApi.ESTADO_IMPORTACION_PRODUCTOS)
+    @PreAuthorize(ExpresionesSeguridad.PRODUCTO_CREAR)
+    @Operation(summary = DocumentacionApi.Producto.CONSULTAR_IMPORTACION, description = DocumentacionApi.Producto.DESCRIPCION_CONSULTAR_IMPORTACION)
+    public ResponseEntity<ApiResponse<ImportacionProductosProgresoDTO>> consultarImportacion(
+            @PathVariable String importacionId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                MensajesExito.Producto.LISTADOS,
+                productoImportacionOrquestadorService.consultar(importacionId)
+        ));
     }
 
     @PostMapping(value = RutasApi.IMPORTAR_PRODUCTOS, consumes = ValoresApi.CONTENIDO_MULTIPART)

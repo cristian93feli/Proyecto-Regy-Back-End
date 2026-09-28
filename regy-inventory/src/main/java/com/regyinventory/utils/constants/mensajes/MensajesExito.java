@@ -133,6 +133,8 @@ public final class MensajesExito {
                 "Producto eliminado correctamente";
         public static final String BUSCADOS = "Productos encontrados correctamente";
         public static final String IMPORTADOS = "Importación de productos procesada correctamente";
+        public static final String IMPORTACION_EN_PROCESO = "Importación en proceso";
+        public static final String IMPORTACION_FINALIZADA = "Importación finalizada";
 
         public static final String NOMBRE_ENTIDAD =
                 "Producto";

@@ -63,6 +63,8 @@ public final class RutasApi {
     public static final String PRODUCTOS_DISPONIBLES = "/productos-disponibles";
     public static final String BUSCAR_PRODUCTOS = "/buscar";
     public static final String IMPORTAR_PRODUCTOS = "/importar";
+    public static final String INICIAR_IMPORTACION_PRODUCTOS = "/importar/iniciar";
+    public static final String ESTADO_IMPORTACION_PRODUCTOS = "/importar/{importacionId}";
     public static final String SUGERENCIAS_SOLICITUD = "/{id}/sugerencias";
 
 }

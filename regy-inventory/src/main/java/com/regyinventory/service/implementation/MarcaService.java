@@ -11,6 +11,7 @@ import com.regyinventory.repository.IMarcaRepository;
 import com.regyinventory.service.contracts.IMarcaService;
 import com.regyinventory.utils.PageableUtil;
 import com.regyinventory.utils.constants.mensajes.MensajesError;
+import com.regyinventory.utils.texto.TextoUtil;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,7 +35,7 @@ public class MarcaService implements IMarcaService {
     ) {
 
         String nombre =
-                request.getNombre().trim();
+                request.getNombre().trim().replaceAll("\\s+", " ");
 
         validarNombreCreacion(nombre);
 
@@ -100,7 +101,7 @@ public class MarcaService implements IMarcaService {
                 buscarEntidad(id);
 
         String nombre =
-                request.getNombre().trim();
+                request.getNombre().trim().replaceAll("\\s+", " ");
 
         validarNombreActualizacion(
                 id,
@@ -191,7 +192,8 @@ public class MarcaService implements IMarcaService {
     ) {
 
         if (marcaRepository
-                .existsByNombreIgnoreCase(nombre)) {
+                .findByNombreNormalizado(TextoUtil.normalizarClaveCatalogo(nombre))
+                .isPresent()) {
 
             throw new BusinessException(
                     MensajesError.Marca.NOMBRE_DUPLICADO
@@ -205,8 +207,8 @@ public class MarcaService implements IMarcaService {
     ) {
 
         if (marcaRepository
-                .existsByNombreIgnoreCaseAndIdNot(
-                        nombre,
+                .existsByNombreNormalizadoAndIdNot(
+                        TextoUtil.normalizarClaveCatalogo(nombre),
                         id
                 )) {
 

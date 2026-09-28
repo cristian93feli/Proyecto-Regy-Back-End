@@ -53,4 +53,95 @@ public interface IProductoRepository extends JpaRepository<Producto, Long> {
             @Param("ubicacionIds") Set<Long> ubicacionIds,
             Pageable pageable
     );
+    /** Lista productos paginados con búsqueda global y filtros, ordenando el número de forma numérica ascendente. */
+    @Query(value = """
+            select producto.*
+            from productos producto
+            where (
+                    :termino = ''
+                    or translate(lower(producto.nombre), 'áéíóúüñ', 'aeiouun') like concat('%', :termino, '%')
+                    or lower(coalesce(producto.sku, '')) like concat('%', lower(:termino), '%')
+                    or lower(coalesce(producto.codigo_barras, '')) like concat('%', lower(:termino), '%')
+                  )
+              and (cast(:marcaId as bigint) is null or producto.marca_id = :marcaId)
+              and (cast(:categoriaId as bigint) is null or producto.categoria_id = :categoriaId)
+              and (cast(:activo as boolean) is null or producto.activo = :activo)
+            order by
+              case when regexp_replace(producto.numero, '[^0-9]', '', 'g') = '' then 1 else 0 end asc,
+              nullif(regexp_replace(producto.numero, '[^0-9]', '', 'g'), '')::numeric asc,
+              lower(producto.numero) asc
+            """,
+            countQuery = """
+            select count(*)
+            from productos producto
+            where (
+                    :termino = ''
+                    or translate(lower(producto.nombre), 'áéíóúüñ', 'aeiouun') like concat('%', :termino, '%')
+                    or lower(coalesce(producto.sku, '')) like concat('%', lower(:termino), '%')
+                    or lower(coalesce(producto.codigo_barras, '')) like concat('%', lower(:termino), '%')
+                  )
+              and (cast(:marcaId as bigint) is null or producto.marca_id = :marcaId)
+              and (cast(:categoriaId as bigint) is null or producto.categoria_id = :categoriaId)
+              and (cast(:activo as boolean) is null or producto.activo = :activo)
+            """, nativeQuery = true)
+    Page<Producto> filtrarPaginado(
+            @Param("termino") String termino,
+            @Param("marcaId") Long marcaId,
+            @Param("categoriaId") Long categoriaId,
+            @Param("activo") Boolean activo,
+            Pageable pageable
+    );
+
+    /** Aplica los mismos filtros limitando resultados a las zonas permitidas del empaquetador. */
+    @Query(value = """
+            select producto.*
+            from productos producto
+            where exists (
+                    select 1 from lotes_inventario lote
+                    where lote.producto_id = producto.id
+                      and lote.cantidad > 0
+                      and lote.ubicacion_id in (:ubicacionIds)
+                  )
+              and (
+                    :termino = ''
+                    or translate(lower(producto.nombre), 'áéíóúüñ', 'aeiouun') like concat('%', :termino, '%')
+                    or lower(coalesce(producto.sku, '')) like concat('%', lower(:termino), '%')
+                    or lower(coalesce(producto.codigo_barras, '')) like concat('%', lower(:termino), '%')
+                  )
+              and (cast(:marcaId as bigint) is null or producto.marca_id = :marcaId)
+              and (cast(:categoriaId as bigint) is null or producto.categoria_id = :categoriaId)
+              and (cast(:activo as boolean) is null or producto.activo = :activo)
+            order by
+              case when regexp_replace(producto.numero, '[^0-9]', '', 'g') = '' then 1 else 0 end asc,
+              nullif(regexp_replace(producto.numero, '[^0-9]', '', 'g'), '')::numeric asc,
+              lower(producto.numero) asc
+            """,
+            countQuery = """
+            select count(*)
+            from productos producto
+            where exists (
+                    select 1 from lotes_inventario lote
+                    where lote.producto_id = producto.id
+                      and lote.cantidad > 0
+                      and lote.ubicacion_id in (:ubicacionIds)
+                  )
+              and (
+                    :termino = ''
+                    or translate(lower(producto.nombre), 'áéíóúüñ', 'aeiouun') like concat('%', :termino, '%')
+                    or lower(coalesce(producto.sku, '')) like concat('%', lower(:termino), '%')
+                    or lower(coalesce(producto.codigo_barras, '')) like concat('%', lower(:termino), '%')
+                  )
+              and (cast(:marcaId as bigint) is null or producto.marca_id = :marcaId)
+              and (cast(:categoriaId as bigint) is null or producto.categoria_id = :categoriaId)
+              and (cast(:activo as boolean) is null or producto.activo = :activo)
+            """, nativeQuery = true)
+    Page<Producto> filtrarPaginadoVisibles(
+            @Param("termino") String termino,
+            @Param("marcaId") Long marcaId,
+            @Param("categoriaId") Long categoriaId,
+            @Param("activo") Boolean activo,
+            @Param("ubicacionIds") Set<Long> ubicacionIds,
+            Pageable pageable
+    );
+
 }

@@ -290,6 +290,10 @@ public final class DocumentacionApi {
         public static final String DESCRIPCION_BUSCAR = "Busca productos activos por número, nombre o código de barras respetando el alcance del usuario autenticado.";
         public static final String IMPORTAR = "Importar productos desde Excel";
         public static final String DESCRIPCION_IMPORTAR = "Procesa el archivo Excel de productos y crea previamente marcas y categorías que no existan.";
+        public static final String INICIAR_IMPORTACION = "Iniciar importación de productos";
+        public static final String DESCRIPCION_INICIAR_IMPORTACION = "Valida el Excel completo y comienza la importación asíncrona con progreso real por fila.";
+        public static final String CONSULTAR_IMPORTACION = "Consultar progreso de importación";
+        public static final String DESCRIPCION_CONSULTAR_IMPORTACION = "Devuelve porcentaje, contadores y reporte final de una importación de productos.";
 
         private Producto() {
         }

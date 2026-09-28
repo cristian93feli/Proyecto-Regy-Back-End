@@ -18,4 +18,9 @@ public final class TextoUtil {
                 .replaceAll("\\p{M}+", "");
         return sinTildes.toLowerCase(Locale.ROOT);
     }
+    /** Normaliza nombres de catálogo para evitar duplicados por espacios, mayúsculas o tildes. */
+    public static String normalizarClaveCatalogo(String valor) {
+        return normalizarBusqueda(valor).replaceAll("\\s+", " ").trim();
+    }
+
 }

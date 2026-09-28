@@ -158,6 +158,8 @@ public final class MensajesError {
         public static final String ARCHIVO_IMPORTACION_INVALIDO = "No fue posible procesar el archivo Excel";
         public static final String COLUMNAS_IMPORTACION_INVALIDAS = "El Excel no contiene las columnas requeridas";
         public static final String CAMPOS_OBLIGATORIOS_IMPORTACION = "Número de producto y nombre del producto son obligatorios";
+        public static final String IMPORTACION_NO_ENCONTRADA = "No existe una importación con identificador %s";
+        public static final String IMPORTACION_FALLIDA = "No fue posible completar la importación";
 
         private Producto() {
         }

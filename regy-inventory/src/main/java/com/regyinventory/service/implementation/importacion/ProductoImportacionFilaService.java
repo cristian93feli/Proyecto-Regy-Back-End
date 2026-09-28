@@ -10,10 +10,11 @@ import com.regyinventory.repository.ICategoriaRepository;
 import com.regyinventory.repository.IMarcaRepository;
 import com.regyinventory.repository.IProductoRepository;
 import com.regyinventory.service.implementation.OperacionSupport;
+import com.regyinventory.service.implementation.ProductoSkuService;
 import com.regyinventory.utils.constants.mensajes.MensajesError;
 import com.regyinventory.utils.constants.mensajes.MensajesExito;
 import com.regyinventory.utils.constants.numeros.Numeros;
-import java.text.Normalizer;
+import com.regyinventory.utils.texto.TextoUtil;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class ProductoImportacionFilaService {
     private final IMarcaRepository marcaRepository;
     private final ICategoriaRepository categoriaRepository;
     private final OperacionSupport operacionSupport;
+    private final ProductoSkuService productoSkuService;
 
     /**
      * Importa una sola fila en una transacción independiente para que un error no revierta
@@ -108,11 +110,12 @@ public class ProductoImportacionFilaService {
             return new ResultadoEntidad<>(null, false);
         }
 
-        String nombreNormalizado = nombreMarca.trim();
-        return marcaRepository.findByNombreIgnoreCase(nombreNormalizado)
+        String nombreVisible = nombreMarca.trim().replaceAll("\\s+", " ");
+        String nombreNormalizado = TextoUtil.normalizarClaveCatalogo(nombreVisible);
+        return marcaRepository.findByNombreNormalizado(nombreNormalizado)
                 .map(marca -> new ResultadoEntidad<>(marca, false))
                 .orElseGet(() -> new ResultadoEntidad<>(
-                        marcaRepository.save(Marca.builder().nombre(nombreNormalizado).descripcion(null).build()),
+                        marcaRepository.saveAndFlush(Marca.builder().nombre(nombreVisible).descripcion(null).build()),
                         true
                 ));
     }
@@ -138,39 +141,12 @@ public class ProductoImportacionFilaService {
             return datos.sku().trim().toUpperCase(Locale.ROOT);
         }
 
-        return generarSku(
+        return productoSkuService.generar(
                 datos.numero(),
                 marca == null ? datos.marca() : marca.getNombre(),
                 categoria == null ? datos.categoria() : categoria.getNombre(),
                 datos.codigoBarras()
         );
-    }
-
-    /** Genera el SKU sugerido con número, marca, categoría y los últimos seis dígitos del código de barras. */
-    private String generarSku(String numero, String marca, String categoria, String codigoBarras) {
-        String marcaParte = abreviar(marca, Numeros.CINCO);
-        String categoriaParte = abreviar(categoria, Numeros.TRES);
-        String barras = codigoBarras == null ? "" : codigoBarras.replaceAll("\\s+", "");
-        String barrasParte = barras.length() <= Numeros.SEIS
-                ? barras
-                : barras.substring(barras.length() - Numeros.SEIS);
-
-        return String.join(
-                "-",
-                normalizarNumero(numero),
-                marcaParte,
-                categoriaParte,
-                barrasParte
-        ).replaceAll("-+$", "");
-    }
-
-    /** Normaliza una palabra para utilizarla dentro del SKU. */
-    private String abreviar(String valor, int longitud) {
-        String normalizado = valor == null ? "" : Normalizer.normalize(valor, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replaceAll("[^A-Za-z0-9]", "")
-                .toUpperCase(Locale.ROOT);
-        return normalizado.substring(Numeros.CERO, Math.min(longitud, normalizado.length()));
     }
 
     /** Normaliza el número de producto para mantener el mismo formato del catálogo manual. */

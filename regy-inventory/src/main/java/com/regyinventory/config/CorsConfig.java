@@ -8,12 +8,11 @@ import java.util.*;
 
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:4200, https://regy-frontend-azii.vercel.app}")
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:4200}")
     private String origins;
 
     @Override
     public void addCorsMappings(CorsRegistry r) {
-        r.addMapping("/**").allowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).toArray(String[]::new))
-                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS").allowedHeaders("*").allowCredentials(true);
+        r.addMapping("/**").allowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).toArray(String[]::new)).allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS").allowedHeaders("*").allowCredentials(true);
     }
 }
