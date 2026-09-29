@@ -8,7 +8,7 @@ import java.util.*;
 
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:4200}")
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:4200,  https://regy-frontend-azii.vercel.app}")
     private String origins;
 
     @Override
