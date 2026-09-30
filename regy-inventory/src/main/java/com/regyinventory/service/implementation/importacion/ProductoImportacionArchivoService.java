@@ -13,9 +13,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -34,46 +36,72 @@ public class ProductoImportacionArchivoService {
     private final ProductoImportacionFilaService filaService;
     private final ExcelCellValueReader cellValueReader;
 
-    /** Valida estructura, cabeceras y precisión de identificadores antes de iniciar la importación. */
-    public int validar(byte[] contenido) {
+    /**
+     * Valida la estructura completa y separa las filas inválidas de las válidas.
+     * Los errores de una fila no bloquean la importación de las demás.
+     */
+    public ValidacionImportacionProducto validar(byte[] contenido) {
         try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(contenido))) {
             Sheet hoja = obtenerHoja(workbook);
             DataFormatter formatter = new DataFormatter(Locale.ROOT);
             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
-            Map<String, Integer> columnas = obtenerColumnasImportacion(hoja.getRow(Numeros.CERO), formatter, evaluator);
-            int total = 0;
-            List<String> errores = new ArrayList<>();
-            java.util.Set<String> numeros = new java.util.HashSet<>();
-            java.util.Set<String> codigos = new java.util.HashSet<>();
-            java.util.Set<String> skus = new java.util.HashSet<>();
+            Map<String, Integer> columnas = obtenerColumnasImportacion(
+                    hoja.getRow(Numeros.CERO),
+                    formatter,
+                    evaluator
+            );
+
+            int total = Numeros.CERO;
+            Set<Integer> filasInvalidas = new HashSet<>();
+            List<ErrorImportacionProductoDTO> errores = new ArrayList<>();
+            Set<String> numeros = new HashSet<>();
+            Set<String> codigos = new HashSet<>();
+            Set<String> skus = new HashSet<>();
 
             for (int indice = Numeros.UNO; indice <= hoja.getLastRowNum(); indice++) {
                 Row fila = hoja.getRow(indice);
                 if (fila == null || filaVacia(fila, formatter, evaluator)) {
                     continue;
                 }
+
                 total++;
                 int numeroFila = indice + Numeros.UNO;
-                validarPrecisionIdentificadores(fila, numeroFila, columnas, errores);
                 DatosImportacionProducto datos = construirDatos(fila, formatter, evaluator, columnas);
-                validarEstructuraFila(datos, numeroFila, numeros, codigos, skus, errores);
+                List<String> erroresFila = validarFilaAntesDeImportar(
+                        fila,
+                        datos,
+                        numeroFila,
+                        columnas,
+                        numeros,
+                        codigos,
+                        skus
+                );
+
+                if (!erroresFila.isEmpty()) {
+                    filasInvalidas.add(numeroFila);
+                    errores.addAll(erroresFila.stream()
+                            .map(mensaje -> construirError(numeroFila, datos, mensaje))
+                            .toList());
+                }
             }
 
-            if (!errores.isEmpty()) {
-                throw new BusinessException(String.join(" | ", errores));
+            if (total == Numeros.CERO) {
+                throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_SIN_REGISTROS);
             }
-            return total;
+
+            return new ValidacionImportacionProducto(total, filasInvalidas, errores);
         } catch (IOException excepcion) {
             throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_INVALIDO);
         }
     }
 
-    /** Procesa todas las filas, aislando cada transacción, y notifica el avance tras cada fila. */
+    /** Procesa únicamente las filas válidas y conserva los rechazos de la validación previa. */
     public ImportacionProductosResponseDTO procesar(
             byte[] contenido,
+            ValidacionImportacionProducto validacion,
             Consumer<ImportacionProductosResponseDTO> progreso
     ) {
-        ImportacionProductosResponseDTO resultado = nuevoResultado();
+        ImportacionProductosResponseDTO resultado = nuevoResultado(validacion);
         try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(contenido))) {
             Sheet hoja = obtenerHoja(workbook);
             DataFormatter formatter = new DataFormatter(Locale.ROOT);
@@ -85,7 +113,13 @@ public class ProductoImportacionArchivoService {
                 if (fila == null || filaVacia(fila, formatter, evaluator)) {
                     continue;
                 }
-                procesarFila(fila, indice + Numeros.UNO, formatter, evaluator, columnas, resultado);
+
+                int numeroFila = indice + Numeros.UNO;
+                if (validacion.filasInvalidas().contains(numeroFila)) {
+                    continue;
+                }
+
+                procesarFila(fila, numeroFila, formatter, evaluator, columnas, resultado);
                 resultado.setFilasProcesadas(resultado.getFilasProcesadas() + Numeros.UNO);
                 progreso.accept(resultado);
             }
@@ -98,13 +132,13 @@ public class ProductoImportacionArchivoService {
         }
     }
 
-    private ImportacionProductosResponseDTO nuevoResultado() {
+    private ImportacionProductosResponseDTO nuevoResultado(ValidacionImportacionProducto validacion) {
         return ImportacionProductosResponseDTO.builder()
-                .filasProcesadas(Numeros.CERO)
+                .filasProcesadas(validacion.filasInvalidas().size())
                 .productosCreados(Numeros.CERO)
                 .marcasCreadas(Numeros.CERO)
                 .categoriasCreadas(Numeros.CERO)
-                .errores(new ArrayList<>())
+                .errores(new ArrayList<>(validacion.errores()))
                 .build();
     }
 
@@ -127,62 +161,53 @@ public class ProductoImportacionArchivoService {
                 resultado.setCategoriasCreadas(resultado.getCategoriasCreadas() + Numeros.UNO);
             }
         } catch (RuntimeException excepcion) {
-            resultado.getErrores().add(ErrorImportacionProductoDTO.builder()
-                    .fila(numeroFila)
-                    .numeroProducto(datos.numero())
-                    .marca(datos.marca())
-                    .categoria(datos.categoria())
-                    .codigoBarras(datos.codigoBarras())
-                    .nombreProducto(datos.nombre())
-                    .sku(datos.sku())
-                    .mensaje(obtenerCausaReal(excepcion))
-                    .build());
+            resultado.getErrores().add(construirError(numeroFila, datos, obtenerCausaReal(excepcion)));
         }
     }
 
-    private DatosImportacionProducto construirDatos(
+    private List<String> validarFilaAntesDeImportar(
             Row fila,
-            DataFormatter formatter,
-            FormulaEvaluator evaluator,
-            Map<String, Integer> columnas
-    ) {
-        return new DatosImportacionProducto(
-                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_NUMERO), formatter, evaluator),
-                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_MARCA), formatter, evaluator),
-                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_CATEGORIA), formatter, evaluator),
-                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_CODIGO_BARRAS), formatter, evaluator),
-                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_NOMBRE), formatter, evaluator),
-                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_SKU), formatter, evaluator)
-        );
-    }
-
-    /** Valida campos mínimos y duplicados internos del archivo antes de iniciar cualquier inserción. */
-    private void validarEstructuraFila(
             DatosImportacionProducto datos,
             int numeroFila,
-            java.util.Set<String> numeros,
-            java.util.Set<String> codigos,
-            java.util.Set<String> skus,
+            Map<String, Integer> columnas,
+            Set<String> numeros,
+            Set<String> codigos,
+            Set<String> skus
+    ) {
+        List<String> errores = new ArrayList<>();
+        validarPrecisionIdentificadores(fila, numeroFila, columnas, errores);
+        validarEstructuraFila(datos, numeros, codigos, skus, errores);
+        return errores;
+    }
+
+    private void validarEstructuraFila(
+            DatosImportacionProducto datos,
+            Set<String> numeros,
+            Set<String> codigos,
+            Set<String> skus,
             List<String> errores
     ) {
         if (datos.numero() == null || datos.numero().isBlank()) {
-            errores.add("Fila " + numeroFila + ": Número de Producto vacío.");
+            errores.add("Número de Producto vacío.");
         } else if (!numeros.add(datos.numero().trim().toUpperCase(Locale.ROOT))) {
-            errores.add("Fila " + numeroFila + ": Número de Producto duplicado dentro del Excel (" + datos.numero() + ").");
+            errores.add("Número de Producto duplicado dentro del Excel (" + datos.numero() + ").");
         }
+
         if (datos.nombre() == null || datos.nombre().isBlank()) {
-            errores.add("Fila " + numeroFila + ": Nombre del Producto vacío.");
+            errores.add("Nombre del Producto vacío.");
         }
+
         if (datos.codigoBarras() != null && !datos.codigoBarras().isBlank()) {
             String codigo = datos.codigoBarras().trim();
             if (!codigos.add(codigo)) {
-                errores.add("Fila " + numeroFila + ": Código de Barras duplicado dentro del Excel (" + codigo + ").");
+                errores.add("Código de Barras duplicado dentro del Excel (" + codigo + ").");
             }
         }
+
         if (datos.sku() != null && !datos.sku().isBlank()) {
             String sku = datos.sku().trim().toUpperCase(Locale.ROOT);
             if (!skus.add(sku)) {
-                errores.add("Fila " + numeroFila + ": SKU duplicado dentro del Excel (" + datos.sku() + ").");
+                errores.add("SKU duplicado dentro del Excel (" + datos.sku() + ").");
             }
         }
     }
@@ -216,7 +241,7 @@ public class ProductoImportacionArchivoService {
         );
     }
 
-    /** Bloquea identificadores numéricos que Excel pudo redondear por superar quince dígitos. */
+    /** Bloquea solo la fila cuando Excel pudo perder precisión de un identificador largo. */
     private void validarPrecisionCelda(
             Row fila,
             int columna,
@@ -226,9 +251,42 @@ public class ProductoImportacionArchivoService {
     ) {
         Cell celda = fila.getCell(columna, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
         if (cellValueReader.exceedsSafeExcelIntegerPrecision(celda)) {
-            errores.add("Fila " + numeroFila + ": " + nombreCampo
+            errores.add(nombreCampo
                     + " supera 15 dígitos y está almacenado como número. Formatea esa columna como Texto para evitar pérdida de precisión.");
         }
+    }
+
+    private DatosImportacionProducto construirDatos(
+            Row fila,
+            DataFormatter formatter,
+            FormulaEvaluator evaluator,
+            Map<String, Integer> columnas
+    ) {
+        return new DatosImportacionProducto(
+                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_NUMERO), formatter, evaluator),
+                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_MARCA), formatter, evaluator),
+                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_CATEGORIA), formatter, evaluator),
+                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_CODIGO_BARRAS), formatter, evaluator),
+                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_NOMBRE), formatter, evaluator),
+                valorCelda(fila, columna(columnas, ConstantesImportacionProducto.ENCABEZADO_SKU), formatter, evaluator)
+        );
+    }
+
+    private ErrorImportacionProductoDTO construirError(
+            int numeroFila,
+            DatosImportacionProducto datos,
+            String mensaje
+    ) {
+        return ErrorImportacionProductoDTO.builder()
+                .fila(numeroFila)
+                .numeroProducto(datos.numero())
+                .marca(datos.marca())
+                .categoria(datos.categoria())
+                .codigoBarras(datos.codigoBarras())
+                .nombreProducto(datos.nombre())
+                .sku(datos.sku())
+                .mensaje(mensaje)
+                .build();
     }
 
     private Sheet obtenerHoja(Workbook workbook) {
@@ -246,6 +304,7 @@ public class ProductoImportacionArchivoService {
         if (cabecera == null) {
             throw new BusinessException(MensajesError.Producto.COLUMNAS_IMPORTACION_INVALIDAS);
         }
+
         Map<String, Integer> columnas = new HashMap<>();
         for (int indice = Numeros.CERO; indice < cabecera.getLastCellNum(); indice++) {
             String encabezado = normalizarEncabezado(valorCelda(cabecera, indice, formatter, evaluator));
@@ -253,6 +312,7 @@ public class ProductoImportacionArchivoService {
                 columnas.put(encabezado, indice);
             }
         }
+
         for (String requerido : ConstantesImportacionProducto.ENCABEZADOS) {
             if (!columnas.containsKey(normalizarEncabezado(requerido))) {
                 throw new BusinessException(MensajesError.Producto.COLUMNAS_IMPORTACION_INVALIDAS);
@@ -293,7 +353,7 @@ public class ProductoImportacionArchivoService {
                 : causa.getMessage();
     }
 
-    /** Genera el Excel final con resumen y detalle exacto de filas rechazadas. */
+    /** Genera el Excel final con resumen y detalle exacto de todas las filas rechazadas. */
     private void adjuntarArchivoErrores(ImportacionProductosResponseDTO resultado) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             Sheet resumen = workbook.createSheet("Resumen");

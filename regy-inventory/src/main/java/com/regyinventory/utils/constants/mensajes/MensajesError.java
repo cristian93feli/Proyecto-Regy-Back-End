@@ -156,6 +156,7 @@ public final class MensajesError {
                 "No se puede eliminar el producto porque tiene ingresos, movimientos u otros registros de inventario asociados";
         public static final String ARCHIVO_IMPORTACION_VACIO = "El archivo de importación está vacío";
         public static final String ARCHIVO_IMPORTACION_INVALIDO = "No fue posible procesar el archivo Excel";
+        public static final String ARCHIVO_IMPORTACION_SIN_REGISTROS = "El Excel no contiene registros de productos para importar";
         public static final String COLUMNAS_IMPORTACION_INVALIDAS = "El Excel no contiene las columnas requeridas";
         public static final String CAMPOS_OBLIGATORIOS_IMPORTACION = "Número de producto y nombre del producto son obligatorios";
         public static final String IMPORTACION_NO_ENCONTRADA = "No existe una importación con identificador %s";

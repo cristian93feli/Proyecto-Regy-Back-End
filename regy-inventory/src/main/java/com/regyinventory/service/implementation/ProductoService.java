@@ -22,6 +22,7 @@ import com.regyinventory.repository.IProductoRepository;
 import com.regyinventory.repository.ISolicitudReposicionRepository;
 import com.regyinventory.service.contracts.IProductoService;
 import com.regyinventory.service.implementation.importacion.ProductoImportacionArchivoService;
+import com.regyinventory.service.implementation.importacion.ValidacionImportacionProducto;
 import com.regyinventory.utils.PageableUtil;
 import com.regyinventory.utils.constants.mensajes.MensajesError;
 import com.regyinventory.utils.constants.mensajes.MensajesExito;
@@ -283,8 +284,8 @@ public class ProductoService implements IProductoService {
         }
         try {
             byte[] contenido = archivo.getBytes();
-            productoImportacionArchivoService.validar(contenido);
-            return productoImportacionArchivoService.procesar(contenido, resultado -> { });
+            ValidacionImportacionProducto validacion = productoImportacionArchivoService.validar(contenido);
+            return productoImportacionArchivoService.procesar(contenido, validacion, resultado -> { });
         } catch (java.io.IOException excepcion) {
             throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_INVALIDO);
         }

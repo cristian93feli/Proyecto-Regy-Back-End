@@ -16,16 +16,16 @@ public class ProductoImportacionOrquestadorService {
     private final ProductoImportacionAsyncService asyncService;
     private final ImportacionProductosEstadoStore estadoStore;
 
-    /** Valida todo el archivo antes de iniciar y devuelve inmediatamente el identificador del trabajo. */
+    /** Valida el archivo y deja bloqueadas solo las filas inválidas antes de iniciar el procesamiento. */
     public ImportacionProductosProgresoDTO iniciar(MultipartFile archivo) {
         if (archivo == null || archivo.isEmpty()) {
             throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_VACIO);
         }
         try {
             byte[] contenido = archivo.getBytes();
-            int total = archivoService.validar(contenido);
-            String id = estadoStore.crear(total);
-            asyncService.procesar(id, contenido);
+            ValidacionImportacionProducto validacion = archivoService.validar(contenido);
+            String id = estadoStore.crear(validacion);
+            asyncService.procesar(id, contenido, validacion);
             return estadoStore.obtener(id);
         } catch (IOException excepcion) {
             throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_INVALIDO);
