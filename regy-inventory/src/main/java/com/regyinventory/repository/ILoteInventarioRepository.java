@@ -39,6 +39,13 @@ public interface ILoteInventarioRepository extends JpaRepository<LoteInventario,
     @Query("select distinct lote.ubicacion from LoteInventario lote where lote.producto.id = :productoId and lote.cantidad > 0 and lote.ubicacion.activo = true")
     List<Ubicacion> buscarUbicacionesConStock(@Param("productoId") Long productoId);
 
+    /** Cantidades agrupadas por ubicación real, sin duplicar campos de stock en productos. */
+    @Query("select lote.ubicacion.id, lote.ubicacion.codigo, sum(lote.cantidad) from LoteInventario lote "
+            + "where lote.producto.id = :productoId and lote.cantidad > 0 and lote.ubicacion.activo = true "
+            + "group by lote.ubicacion.id, lote.ubicacion.codigo order by lote.ubicacion.codigo")
+    List<Object[]> resumenUbicacionesProducto(@Param("productoId") Long productoId);
+
+
 
     /** Ordena los lotes positivos del producto por FEFO y después FIFO para sugerir ubicaciones de origen. */
     @Query("select lote from LoteInventario lote where lote.producto.id = :productoId and lote.cantidad > 0 and lote.ubicacion.activo = true order by case when lote.fechaVencimiento is null then 1 else 0 end, lote.fechaVencimiento asc, lote.fechaIngreso asc, lote.id asc")

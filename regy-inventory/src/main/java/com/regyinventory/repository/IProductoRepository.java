@@ -2,6 +2,7 @@ package com.regyinventory.repository;
 
 import com.regyinventory.entities.Producto;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface IProductoRepository extends JpaRepository<Producto, Long> {
+    Optional<Producto> findByNumeroIgnoreCase(String numero);
+
     boolean existsByNumeroIgnoreCase(String numero);
 
     boolean existsByNumeroIgnoreCaseAndIdNot(String numero, Long id);

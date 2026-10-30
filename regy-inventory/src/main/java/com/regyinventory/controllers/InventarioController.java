@@ -5,6 +5,12 @@ import com.regyinventory.dto.request.IngresoStockRequestDTO;
 import com.regyinventory.dto.request.MoverStockRequestDTO;
 import com.regyinventory.dto.request.VentaProductoRequestDTO;
 import com.regyinventory.dto.response.UbicacionResponseDTO;
+import com.regyinventory.dto.response.ImportacionStockProgresoDTO;
+import com.regyinventory.service.implementation.importacionstock.ImportacionStockOrquestadorService;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 import com.regyinventory.dto.response.ApiResponse;
 import com.regyinventory.dto.response.IngresoStockResponseDTO;
 import com.regyinventory.dto.response.InventarioResponseDTO;
@@ -39,6 +45,33 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class InventarioController {
 
     private final IInventarioService inventarioService;
+    private final ImportacionStockOrquestadorService importacionStock;
+
+    @PostMapping(value = RutasApi.INICIAR_IMPORTACION_STOCK, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(ExpresionesSeguridad.STOCK_RECIBIR)
+    @Operation(summary = "Iniciar importación masiva de stock", description = "Valida el Excel y registra los ingresos válidos en segundo plano, respetando los permisos de ubicación.")
+    public ResponseEntity<ApiResponse<ImportacionStockProgresoDTO>> iniciarImportacionStock(
+            @RequestPart("archivo") MultipartFile archivo) {
+        return ResponseEntity.accepted().body(ApiResponse.success(
+                "Importación de stock iniciada", importacionStock.iniciar(archivo)));
+    }
+
+    @GetMapping(RutasApi.ESTADO_IMPORTACION_STOCK)
+    @PreAuthorize(ExpresionesSeguridad.STOCK_RECIBIR)
+    @Operation(summary = "Consultar progreso y reporte de importación de stock")
+    public ApiResponse<ImportacionStockProgresoDTO> estadoImportacionStock(@PathVariable String importacionId) {
+        return ApiResponse.success("Estado de importación de stock", importacionStock.consultar(importacionId));
+    }
+
+    @GetMapping(RutasApi.PLANTILLA_IMPORTACION_STOCK)
+    @PreAuthorize(ExpresionesSeguridad.STOCK_RECIBIR)
+    @Operation(summary = "Descargar plantilla Excel de importación masiva de stock")
+    public ResponseEntity<byte[]> plantillaImportacionStock() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=plantilla_ingreso_stock.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(importacionStock.plantilla());
+    }
 
     @PostMapping(RutasApi.INGRESOS)
     @PreAuthorize(ExpresionesSeguridad.STOCK_RECIBIR)

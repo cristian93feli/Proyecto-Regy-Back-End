@@ -64,6 +64,9 @@ public class ProductoResponseDTO {
     @Schema(description = DocumentacionApi.Producto.STOCK_TOTAL, example = "125")
     private Integer stockTotal;
 
+    @Schema(description = "Resumen de existencias por caja o zona de empaque")
+    private String ubicacionesStock;
+
     @Schema(description = DocumentacionApi.Producto.ACTIVO, example = "true")
     private Boolean activo;
 }

@@ -24,6 +24,7 @@ public class ImportacionProductosProgresoDTO {
     private Integer porcentaje;
     private Integer marcasCreadas;
     private Integer categoriasCreadas;
+    private String reporteId;
     private String archivoErroresNombre;
     private String archivoErroresBase64;
     private String mensaje;

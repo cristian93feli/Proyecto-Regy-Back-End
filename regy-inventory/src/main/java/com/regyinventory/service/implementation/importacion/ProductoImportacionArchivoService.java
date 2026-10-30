@@ -13,11 +13,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -51,46 +54,53 @@ public class ProductoImportacionArchivoService {
                     evaluator
             );
 
-            int total = Numeros.CERO;
-            Set<Integer> filasInvalidas = new HashSet<>();
-            List<ErrorImportacionProductoDTO> errores = new ArrayList<>();
-            Set<String> numeros = new HashSet<>();
-            Set<String> codigos = new HashSet<>();
-            Set<String> skus = new HashSet<>();
+            Map<Integer, DatosImportacionProducto> datosPorFila = new LinkedHashMap<>();
+            Map<Integer, List<String>> erroresPorFila = new LinkedHashMap<>();
+            Map<String, List<Integer>> numeros = new LinkedHashMap<>();
+            Map<String, List<Integer>> codigos = new LinkedHashMap<>();
+            Map<String, List<Integer>> skus = new LinkedHashMap<>();
 
             for (int indice = Numeros.UNO; indice <= hoja.getLastRowNum(); indice++) {
                 Row fila = hoja.getRow(indice);
-                if (fila == null || filaVacia(fila, formatter, evaluator)) {
-                    continue;
-                }
-
-                total++;
+                if (fila == null || filaVacia(fila, formatter, evaluator)) continue;
                 int numeroFila = indice + Numeros.UNO;
-                DatosImportacionProducto datos = construirDatos(fila, formatter, evaluator, columnas);
-                List<String> erroresFila = validarFilaAntesDeImportar(
-                        fila,
-                        datos,
-                        numeroFila,
-                        columnas,
-                        numeros,
-                        codigos,
-                        skus
-                );
-
-                if (!erroresFila.isEmpty()) {
-                    filasInvalidas.add(numeroFila);
-                    errores.addAll(erroresFila.stream()
-                            .map(mensaje -> construirError(numeroFila, datos, mensaje))
-                            .toList());
+                if (datosPorFila.size() >= 50000) {
+                    throw new BusinessException("El Excel supera el máximo de 50.000 filas de productos.");
                 }
+                DatosImportacionProducto datos = construirDatos(fila, formatter, evaluator, columnas);
+                datosPorFila.put(numeroFila, datos);
+                List<String> errores = new ArrayList<>();
+                validarPrecisionIdentificadores(fila, numeroFila, columnas, errores);
+                if (datos.numero() == null || datos.numero().isBlank()) {
+                    errores.add("Número de Producto vacío.");
+                } else {
+                    registrarIdentificador(numeros, datos.numero(), numeroFila);
+                }
+                if (datos.nombre() == null || datos.nombre().isBlank()) errores.add("Nombre del Producto vacío.");
+                registrarIdentificador(codigos, datos.codigoBarras(), numeroFila);
+                registrarIdentificador(skus, datos.sku(), numeroFila);
+                erroresPorFila.put(numeroFila, errores);
             }
-
-            if (total == Numeros.CERO) {
+            if (datosPorFila.isEmpty()) {
                 throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_SIN_REGISTROS);
             }
 
-            return new ValidacionImportacionProducto(total, filasInvalidas, errores);
-        } catch (IOException excepcion) {
+            // Todas las filas implicadas se rechazan, incluida la primera aparición.
+            marcarDuplicados(numeros, "Número de Producto", erroresPorFila);
+            marcarDuplicados(codigos, "Código de Barras", erroresPorFila);
+            marcarDuplicados(skus, "SKU", erroresPorFila);
+            Set<Integer> invalidas = new LinkedHashSet<>();
+            List<ErrorImportacionProductoDTO> errores = new ArrayList<>();
+            erroresPorFila.forEach((numeroFila, motivos) -> {
+                if (!motivos.isEmpty()) {
+                    invalidas.add(numeroFila);
+                    errores.add(construirError(numeroFila, datosPorFila.get(numeroFila), String.join(" | ", motivos)));
+                }
+            });
+            return new ValidacionImportacionProducto(datosPorFila.size(), invalidas, errores);
+        } catch (BusinessException excepcion) {
+            throw excepcion;
+        } catch (IOException | RuntimeException excepcion) {
             throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_INVALIDO);
         }
     }
@@ -121,7 +131,8 @@ public class ProductoImportacionArchivoService {
 
                 procesarFila(fila, numeroFila, formatter, evaluator, columnas, resultado);
                 resultado.setFilasProcesadas(resultado.getFilasProcesadas() + Numeros.UNO);
-                progreso.accept(resultado);
+                // Actualizar en bloques evita copiar grandes listas de errores por cada fila.
+                if (resultado.getFilasProcesadas() % 20 == 0) progreso.accept(resultado);
             }
 
             adjuntarArchivoErrores(resultado);
@@ -165,51 +176,24 @@ public class ProductoImportacionArchivoService {
         }
     }
 
-    private List<String> validarFilaAntesDeImportar(
-            Row fila,
-            DatosImportacionProducto datos,
-            int numeroFila,
-            Map<String, Integer> columnas,
-            Set<String> numeros,
-            Set<String> codigos,
-            Set<String> skus
-    ) {
-        List<String> errores = new ArrayList<>();
-        validarPrecisionIdentificadores(fila, numeroFila, columnas, errores);
-        validarEstructuraFila(datos, numeros, codigos, skus, errores);
-        return errores;
+    private void registrarIdentificador(Map<String, List<Integer>> apariciones, String valor, int fila) {
+        if (valor != null && !valor.isBlank()) {
+            apariciones.computeIfAbsent(valor.trim().toUpperCase(Locale.ROOT), clave -> new ArrayList<>()).add(fila);
+        }
     }
 
-    private void validarEstructuraFila(
-            DatosImportacionProducto datos,
-            Set<String> numeros,
-            Set<String> codigos,
-            Set<String> skus,
-            List<String> errores
-    ) {
-        if (datos.numero() == null || datos.numero().isBlank()) {
-            errores.add("Número de Producto vacío.");
-        } else if (!numeros.add(datos.numero().trim().toUpperCase(Locale.ROOT))) {
-            errores.add("Número de Producto duplicado dentro del Excel (" + datos.numero() + ").");
-        }
-
-        if (datos.nombre() == null || datos.nombre().isBlank()) {
-            errores.add("Nombre del Producto vacío.");
-        }
-
-        if (datos.codigoBarras() != null && !datos.codigoBarras().isBlank()) {
-            String codigo = datos.codigoBarras().trim();
-            if (!codigos.add(codigo)) {
-                errores.add("Código de Barras duplicado dentro del Excel (" + codigo + ").");
+    private void marcarDuplicados(Map<String, List<Integer>> apariciones, String campo,
+                                 Map<Integer, List<String>> erroresPorFila) {
+        apariciones.forEach((valor, filas) -> {
+            if (filas.size() > 1) {
+                // Limitar el texto compartido por miles de filas evita consumo cuadrático de memoria.
+                String referencias = filas.stream().limit(200).map(String::valueOf)
+                        .collect(java.util.stream.Collectors.joining(", "));
+                if (filas.size() > 200) referencias += " (y " + (filas.size() - 200) + " filas más)";
+                String motivo = campo + " duplicado en el Excel (" + valor + "). Filas: " + referencias + ".";
+                filas.forEach(fila -> erroresPorFila.get(fila).add(motivo));
             }
-        }
-
-        if (datos.sku() != null && !datos.sku().isBlank()) {
-            String sku = datos.sku().trim().toUpperCase(Locale.ROOT);
-            if (!skus.add(sku)) {
-                errores.add("SKU duplicado dentro del Excel (" + datos.sku() + ").");
-            }
-        }
+        });
     }
 
     private void validarPrecisionIdentificadores(
@@ -343,67 +327,89 @@ public class ProductoImportacionArchivoService {
         return cellValueReader.read(cell, formatter, evaluator);
     }
 
+    /** Nunca expone SQL, nombres de restricciones ni trazas técnicas al usuario final. */
     private String obtenerCausaReal(RuntimeException excepcion) {
-        Throwable causa = excepcion;
-        while (causa.getCause() != null && causa.getCause() != causa) {
-            causa = causa.getCause();
+        Throwable actual = excepcion;
+        while (actual != null) {
+            if (actual instanceof BusinessException negocio && negocio.getMessage() != null) {
+                return negocio.getMessage();
+            }
+            actual = actual.getCause();
         }
-        return causa.getMessage() == null || causa.getMessage().isBlank()
-                ? MensajesError.Producto.ARCHIVO_IMPORTACION_INVALIDO
-                : causa.getMessage();
+        if (excepcion instanceof org.springframework.dao.DataIntegrityViolationException) {
+            return "No se pudo registrar: número, SKU o código de barras ya existente. Verifica los identificadores.";
+        }
+        return "No fue posible importar esta fila. Verifica sus datos e inténtalo nuevamente.";
     }
 
-    /** Genera el Excel final con resumen y detalle exacto de todas las filas rechazadas. */
+    /** Reporte de resultados: una fila por producto idéntico rechazado, conservando filas y motivos. */
     private void adjuntarArchivoErrores(ImportacionProductosResponseDTO resultado) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             Sheet resumen = workbook.createSheet("Resumen");
-            resumen.createRow(0).createCell(0).setCellValue("Procesados");
-            resumen.getRow(0).createCell(1).setCellValue(resultado.getFilasProcesadas());
-            resumen.createRow(1).createCell(0).setCellValue("Exitosos");
-            resumen.getRow(1).createCell(1).setCellValue(resultado.getProductosCreados());
-            resumen.createRow(2).createCell(0).setCellValue("Errores");
-            resumen.getRow(2).createCell(1).setCellValue(resultado.getErrores().size());
-            resumen.createRow(3).createCell(0).setCellValue("Marcas creadas");
-            resumen.getRow(3).createCell(1).setCellValue(resultado.getMarcasCreadas());
-            resumen.createRow(4).createCell(0).setCellValue("Categorías creadas");
-            resumen.getRow(4).createCell(1).setCellValue(resultado.getCategoriasCreadas());
+            String[] etiquetas = {"Filas analizadas", "Productos creados", "Filas rechazadas",
+                    "Incidencias", "Marcas creadas", "Categorías creadas", "Fecha del proceso"};
+            int rechazadas = resultado.getErrores().size();
+            int[] valores = {resultado.getFilasProcesadas(), resultado.getProductosCreados(), rechazadas,
+                    (int) resultado.getErrores().stream().mapToLong(e -> e.getMensaje().split(" \\| ").length).sum(),
+                    resultado.getMarcasCreadas(), resultado.getCategoriasCreadas()};
+            for (int i = 0; i < etiquetas.length; i++) {
+                Row fila = resumen.createRow(i);
+                fila.createCell(0).setCellValue(etiquetas[i]);
+                if (i < valores.length) fila.createCell(1).setCellValue(valores[i]);
+                else fila.createCell(1).setCellValue(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            }
+            resumen.autoSizeColumn(0);
+            resumen.setColumnWidth(1, 22 * 256);
 
             Sheet rechazados = workbook.createSheet(ConstantesImportacionProducto.HOJA_RECHAZADOS);
-            String[] headers = {
-                    ConstantesImportacionProducto.ENCABEZADO_FILA,
-                    ConstantesImportacionProducto.ENCABEZADO_NUMERO,
-                    ConstantesImportacionProducto.ENCABEZADO_MARCA,
-                    ConstantesImportacionProducto.ENCABEZADO_CATEGORIA,
+            String[] headers = {"Filas originales", ConstantesImportacionProducto.ENCABEZADO_NUMERO,
+                    ConstantesImportacionProducto.ENCABEZADO_MARCA, ConstantesImportacionProducto.ENCABEZADO_CATEGORIA,
                     ConstantesImportacionProducto.ENCABEZADO_CODIGO_BARRAS,
-                    ConstantesImportacionProducto.ENCABEZADO_NOMBRE,
-                    ConstantesImportacionProducto.ENCABEZADO_SKU,
-                    ConstantesImportacionProducto.ENCABEZADO_MOTIVO
-            };
-            Row header = rechazados.createRow(0);
-            for (int indice = 0; indice < headers.length; indice++) {
-                header.createCell(indice).setCellValue(headers[indice]);
+                    ConstantesImportacionProducto.ENCABEZADO_NOMBRE, ConstantesImportacionProducto.ENCABEZADO_SKU,
+                    ConstantesImportacionProducto.ENCABEZADO_MOTIVO};
+            Row encabezado = rechazados.createRow(0);
+            for (int i = 0; i < headers.length; i++) encabezado.createCell(i).setCellValue(headers[i]);
+
+            record RechazoAgrupado(ErrorImportacionProductoDTO ejemplo, List<Integer> filas, Set<String> motivos) { }
+            Map<List<String>, RechazoAgrupado> agrupados = new LinkedHashMap<>();
+            for (ErrorImportacionProductoDTO error : resultado.getErrores()) {
+                // No fusionar productos distintos aunque compartan erróneamente un identificador.
+                List<String> clave = List.of(seguro(error.getNumeroProducto()), seguro(error.getMarca()),
+                        seguro(error.getCategoria()), seguro(error.getCodigoBarras()),
+                        seguro(error.getNombreProducto()), seguro(error.getSku()));
+                RechazoAgrupado agrupado = agrupados.computeIfAbsent(clave,
+                        k -> new RechazoAgrupado(error, new ArrayList<>(), new LinkedHashSet<>()));
+                agrupado.filas().add(error.getFila());
+                agrupado.motivos().add(error.getMensaje());
             }
-            for (int indice = 0; indice < resultado.getErrores().size(); indice++) {
-                ErrorImportacionProductoDTO error = resultado.getErrores().get(indice);
-                Row row = rechazados.createRow(indice + 1);
-                row.createCell(0).setCellValue(error.getFila());
+            int indice = 1;
+            for (RechazoAgrupado grupo : agrupados.values()) {
+                ErrorImportacionProductoDTO error = grupo.ejemplo();
+                Row row = rechazados.createRow(indice++);
+                String filasTexto = grupo.filas().stream().limit(2000).map(String::valueOf)
+                        .collect(java.util.stream.Collectors.joining(", "));
+                if (grupo.filas().size() > 2000) filasTexto += " (y " + (grupo.filas().size() - 2000) + " más)";
+                row.createCell(0).setCellValue(filasTexto);
                 row.createCell(1).setCellValue(seguro(error.getNumeroProducto()));
                 row.createCell(2).setCellValue(seguro(error.getMarca()));
                 row.createCell(3).setCellValue(seguro(error.getCategoria()));
                 row.createCell(4).setCellValue(seguro(error.getCodigoBarras()));
                 row.createCell(5).setCellValue(seguro(error.getNombreProducto()));
                 row.createCell(6).setCellValue(seguro(error.getSku()));
-                row.createCell(7).setCellValue(seguro(error.getMensaje()));
+                row.createCell(7).setCellValue(limitarTextoExcel(String.join(" | ", grupo.motivos())));
             }
-            for (int indice = 0; indice < headers.length; indice++) {
-                rechazados.autoSizeColumn(indice);
-            }
+            for (int i = 0; i < headers.length; i++) rechazados.setColumnWidth(i, (i == 7 ? 90 : 25) * 256);
             workbook.write(output);
             resultado.setArchivoErroresNombre(ConstantesImportacionProducto.ARCHIVO_ERRORES_NOMBRE);
             resultado.setArchivoErroresBase64(Base64.getEncoder().encodeToString(output.toByteArray()));
         } catch (IOException excepcion) {
             throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_INVALIDO);
         }
+    }
+
+    /** Una celda de Excel admite como máximo 32.767 caracteres. */
+    private String limitarTextoExcel(String valor) {
+        return valor.length() <= 32767 ? valor : valor.substring(0, 32740) + "... (texto abreviado)";
     }
 
     private String seguro(String valor) {

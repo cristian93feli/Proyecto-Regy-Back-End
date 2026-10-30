@@ -26,7 +26,7 @@ public class ProductoImportacionAsyncService {
         } catch (RuntimeException excepcion) {
             estadoStore.fallar(
                     id,
-                    excepcion.getMessage() == null ? MensajesError.Producto.IMPORTACION_FALLIDA : excepcion.getMessage()
+                    MensajesError.Producto.IMPORTACION_FALLIDA
             );
         }
     }

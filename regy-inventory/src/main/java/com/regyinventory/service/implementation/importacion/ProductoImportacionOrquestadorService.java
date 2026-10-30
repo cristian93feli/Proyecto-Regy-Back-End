@@ -21,10 +21,13 @@ public class ProductoImportacionOrquestadorService {
         if (archivo == null || archivo.isEmpty()) {
             throw new BusinessException(MensajesError.Producto.ARCHIVO_IMPORTACION_VACIO);
         }
+        if (archivo.getSize() > 15 * 1024 * 1024) {
+            throw new BusinessException("El archivo no puede superar 15 MB.");
+        }
         try {
             byte[] contenido = archivo.getBytes();
             ValidacionImportacionProducto validacion = archivoService.validar(contenido);
-            String id = estadoStore.crear(validacion);
+            String id = estadoStore.crear(validacion, archivo.getOriginalFilename());
             asyncService.procesar(id, contenido, validacion);
             return estadoStore.obtener(id);
         } catch (IOException excepcion) {

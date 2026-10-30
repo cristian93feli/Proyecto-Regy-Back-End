@@ -459,8 +459,19 @@ public class ProductoService implements IProductoService {
                 .unidadMedida(producto.getUnidadMedida())
                 .stockMinimo(producto.getStockMinimo())
                 .stockTotal(calcularStockVisible(producto.getId()))
+                .ubicacionesStock(resumenUbicacionesStock(producto.getId()))
                 .activo(producto.getActivo())
                 .build();
+    }
+
+    /** Consulta las ubicaciones existentes; aplica el mismo alcance de visibilidad por rol. */
+    private String resumenUbicacionesStock(Long productoId) {
+        java.util.Set<Long> permitidas = operacionSupport.usuarioAutenticadoEsEmpaquetador()
+                ? operacionSupport.obtenerZonasAsignadasIds() : null;
+        return loteInventarioRepository.resumenUbicacionesProducto(productoId).stream()
+                .filter(item -> permitidas == null || permitidas.contains((Long) item[0]))
+                .map(item -> item[1] + " · " + item[2] + " und.")
+                .collect(java.util.stream.Collectors.joining(" / "));
     }
 
     /** Calcula el stock total visible para el usuario autenticado. */

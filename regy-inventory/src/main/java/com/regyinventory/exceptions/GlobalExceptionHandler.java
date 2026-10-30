@@ -109,7 +109,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(
                         MensajesError.ERROR_INTERNO,
-                        exception.getMessage(),
+                        null,
                         request.getRequestURI()
                 ));
     }
